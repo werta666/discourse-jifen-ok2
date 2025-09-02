@@ -23,21 +23,21 @@
 
   {{! 统计面板 - 可点击筛选 }}
   <div class="qd-admin-stats">
-    <div class="stats-item {{if (eq this.currentFilter 'all') 'active'}}" {{on "click" (action "setFilter" "all")}}>
+    <div class="stats-item {{if (eq this.currentFilter 'all') 'active'}}" {{on "click" (fn this.setFilter "all")}}>
       <span class="stats-label">总订单数</span>
-      <span class="stats-value">{{this.totalOrders}}</span>
+      <span class="stats-value">{{this.orderStats.total}}</span>
     </div>
-    <div class="stats-item pending {{if (eq this.currentFilter 'pending') 'active'}}" {{on "click" (action "setFilter" "pending")}}>
+    <div class="stats-item pending {{if (eq this.currentFilter 'pending') 'active'}}" {{on "click" (fn this.setFilter "pending")}}>
       <span class="stats-label">处理中</span>
-      <span class="stats-value">{{this.pendingOrders}}</span>
+      <span class="stats-value">{{this.orderStats.pending}}</span>
     </div>
-    <div class="stats-item completed {{if (eq this.currentFilter 'completed') 'active'}}" {{on "click" (action "setFilter" "completed")}}>
+    <div class="stats-item completed {{if (eq this.currentFilter 'completed') 'active'}}" {{on "click" (fn this.setFilter "completed")}}>
       <span class="stats-label">已完成</span>
-      <span class="stats-value">{{this.completedOrders}}</span>
+      <span class="stats-value">{{this.orderStats.completed}}</span>
     </div>
-    <div class="stats-item cancelled {{if (eq this.currentFilter 'cancelled') 'active'}}" {{on "click" (action "setFilter" "cancelled")}}>
+    <div class="stats-item cancelled {{if (eq this.currentFilter 'cancelled') 'active'}}" {{on "click" (fn this.setFilter "cancelled")}}>
       <span class="stats-label">已取消</span>
-      <span class="stats-value">{{this.cancelledOrders}}</span>
+      <span class="stats-value">{{this.orderStats.cancelled}}</span>
     </div>
   </div>
 

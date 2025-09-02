@@ -1,34 +1,22 @@
 import Controller from "@ember/controller";
 import { action } from "@ember/object";
 import { tracked } from "@glimmer/tracking";
+import { inject as service } from "@ember/service";
 import { ajax } from "discourse/lib/ajax";
 
 export default class QdShopAdminOrdersController extends Controller {
+  @service router;
   @tracked isLoading = false;
-  @tracked statusMessage = "";
   @tracked selectedOrder = null;
   @tracked showStatusModal = false;
   @tracked newStatus = "";
   @tracked adminNotes = "";
+  @tracked statusMessage = "";
   @tracked currentFilter = "all";
+  @tracked currentPage = 1;
+  @tracked pageSize = 8;
 
-  get filteredOrders() {
-    if (!this.model?.orders) return [];
-    
-    const orders = this.model.orders;
-    
-    switch (this.currentFilter) {
-      case "pending":
-        return orders.filter(order => order.status === "pending");
-      case "completed":
-        return orders.filter(order => order.status === "completed");
-      case "cancelled":
-        return orders.filter(order => order.status === "cancelled");
-      default:
-        return orders;
-    }
-  }
-
+  // 获取订单统计数据
   get orderStats() {
     if (!this.model?.orders) return { total: 0, pending: 0, completed: 0, cancelled: 0 };
     
@@ -41,13 +29,80 @@ export default class QdShopAdminOrdersController extends Controller {
     };
   }
 
-  @action
-  setFilter(filter) {
-    this.currentFilter = filter;
+  // 获取所有订单
+  get allOrders() {
+    return this.model?.orders || [];
+  }
+
+  // 根据筛选条件获取订单
+  get filteredOrders() {
+    if (this.currentFilter === "all") {
+      return this.allOrders;
+    }
+    return this.allOrders.filter(order => order.status === this.currentFilter);
+  }
+
+  // 分页订单
+  get paginatedOrders() {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredOrders.slice(startIndex, endIndex);
+  }
+
+  // 总页数
+  get totalPages() {
+    return Math.ceil(this.filteredOrders.length / this.pageSize);
+  }
+
+  // 是否有多页
+  get hasMultiplePages() {
+    return this.totalPages > 1;
+  }
+
+  // 是否有上一页
+  get hasPreviousPage() {
+    return this.currentPage > 1;
+  }
+
+  // 是否有下一页
+  get hasNextPage() {
+    return this.currentPage < this.totalPages;
   }
 
   @action
-  openStatusModal(order) {
+  goBackToShop() {
+    this.router.transitionTo("qd-shop");
+  }
+
+  @action
+  setFilter(filter) {
+    this.currentFilter = filter;
+    this.currentPage = 1; // 重置到第一页
+  }
+
+  @action
+  goToPage(page) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  @action
+  previousPage() {
+    if (this.hasPreviousPage) {
+      this.currentPage--;
+    }
+  }
+
+  @action
+  nextPage() {
+    if (this.hasNextPage) {
+      this.currentPage++;
+    }
+  }
+
+  @action
+  showUpdateStatusModal(order) {
     this.selectedOrder = order;
     this.newStatus = order.status;
     this.adminNotes = "";
@@ -65,8 +120,8 @@ export default class QdShopAdminOrdersController extends Controller {
   }
 
   @action
-  updateOrderStatus(status) {
-    this.newStatus = status;
+  updateOrderStatus(event) {
+    this.newStatus = event.target.value;
   }
 
   @action
@@ -109,6 +164,14 @@ export default class QdShopAdminOrdersController extends Controller {
         if (orderIndex !== -1) {
           this.model.orders[orderIndex].status = this.newStatus;
           this.model.orders[orderIndex].updated_at = new Date().toISOString();
+          // 如果有备注，更新备注
+          if (this.adminNotes) {
+            const currentNotes = this.model.orders[orderIndex].notes || "";
+            const timestamp = new Date().toLocaleString("zh-CN");
+            this.model.orders[orderIndex].notes = currentNotes + 
+              (currentNotes ? "\n" : "") + 
+              `[${timestamp} 管理员备注] ${this.adminNotes}`;
+          }
           // 触发界面更新
           this.notifyPropertyChange('model');
         }
@@ -135,12 +198,11 @@ export default class QdShopAdminOrdersController extends Controller {
 
   @action
   async deleteOrder(order) {
-    if (!confirm(`确定要删除订单 #${order.id} 吗？`)) {
+    if (!confirm(`确定要删除订单 #${order.id} 吗？此操作不可恢复。`)) {
       return;
     }
 
     this.isLoading = true;
-    this.statusMessage = "";
 
     try {
       const response = await ajax(`/qd/shop/admin/orders/${order.id}`, {
@@ -148,24 +210,24 @@ export default class QdShopAdminOrdersController extends Controller {
       });
 
       if (response.status === "success") {
-        // 从列表中移除订单
+        // 从本地数据中移除订单
         const orderIndex = this.model.orders.findIndex(o => o.id === order.id);
         if (orderIndex !== -1) {
           this.model.orders.splice(orderIndex, 1);
           this.notifyPropertyChange('model');
         }
         
-        this.statusMessage = "订单删除成功！";
+        this.statusMessage = "✅ 订单删除成功！";
         
         setTimeout(() => {
           this.statusMessage = "";
         }, 3000);
       } else {
-        this.statusMessage = response.message || "删除失败";
+        this.statusMessage = "❌ " + (response.message || "删除失败");
       }
     } catch (error) {
       console.error("删除订单失败:", error);
-      this.statusMessage = "删除失败：" + (error.message || "网络错误");
+      this.statusMessage = "❌ 删除订单失败：" + (error.message || "网络错误");
     } finally {
       this.isLoading = false;
     }
@@ -179,7 +241,7 @@ export default class QdShopAdminOrdersController extends Controller {
     try {
       console.log("🔄 刷新管理员订单列表");
       
-      // 重新加载当前路由
+      // 刷新当前路由
       this.router.refresh();
       
       console.log("✅ 页面刷新成功");
@@ -194,6 +256,24 @@ export default class QdShopAdminOrdersController extends Controller {
   @action
   stopPropagation(event) {
     event.stopPropagation();
+  }
+
+  @action
+  formatDate(dateString) {
+    if (!dateString) return "";
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit", 
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } catch (e) {
+      return dateString;
+    }
   }
 
   @action
@@ -228,23 +308,5 @@ export default class QdShopAdminOrdersController extends Controller {
   getUserAvatar(avatarTemplate) {
     if (!avatarTemplate) return "/images/avatar.png";
     return avatarTemplate.replace("{size}", "45");
-  }
-
-  @action
-  formatDate(dateString) {
-    if (!dateString) return "";
-    
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString("zh-CN", {
-        year: "numeric",
-        month: "2-digit", 
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    } catch (e) {
-      return dateString;
-    }
   }
 }

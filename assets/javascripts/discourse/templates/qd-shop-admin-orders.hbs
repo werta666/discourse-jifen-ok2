@@ -58,7 +58,7 @@
                 </span>
                 <button 
                   class="btn btn-small update-status-btn" 
-                  {{on "click" (fn this.showUpdateStatusModal order)}}
+                  {{on "click" (action "showUpdateStatusModal" order)}}
                 >
                   <i class="fa fa-edit"></i>
                   更新状态
@@ -162,7 +162,7 @@
       
       <div class="status-form">
         <label for="new-status">新状态:</label>
-        <select id="new-status" {{on "change" (fn (mut this.newStatus) value="target.value")}}>
+        <select id="new-status" {{on "change" (action (mut this.newStatus) value="target.value")}}>
           <option value="pending" selected={{eq this.newStatus "pending"}}>处理中</option>
           <option value="completed" selected={{eq this.newStatus "completed"}}>已完成</option>
           <option value="cancelled" selected={{eq this.newStatus "cancelled"}}>已取消</option>
@@ -172,7 +172,7 @@
         <textarea 
           id="admin-notes" 
           placeholder="可选的管理员备注..."
-          {{on "input" (fn (mut this.adminNotes) value="target.value")}}
+          {{on "input" (action (mut this.adminNotes) value="target.value")}}
         >{{this.adminNotes}}</textarea>
       </div>
       

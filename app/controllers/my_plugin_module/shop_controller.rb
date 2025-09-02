@@ -538,8 +538,8 @@ class MyPluginModule::ShopController < ApplicationController
     
     begin
       order_id = params[:id]&.to_i
-      new_status = params[:status]
-      admin_notes = params[:admin_notes] || ""
+      new_status = params[:status] || params.dig(:data, :status)
+      admin_notes = params[:admin_notes] || params.dig(:data, :admin_notes) || ""
       
       unless ['pending', 'completed', 'cancelled'].include?(new_status)
         render json: {

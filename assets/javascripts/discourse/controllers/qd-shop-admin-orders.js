@@ -167,12 +167,21 @@ export default class QdShopAdminOrdersController extends Controller {
 
   @action
   async confirmUpdateOrder() {
-    if (!this.selectedOrder || !this.newStatus) return;
+    if (!this.selectedOrder || !this.newStatus) {
+      this.statusMessage = "请选择订单状态";
+      return;
+    }
 
     this.isLoading = true;
     this.statusMessage = "";
 
     try {
+      console.log("🔄 发送状态更新请求:", {
+        orderId: this.selectedOrder.id,
+        newStatus: this.newStatus,
+        adminNotes: this.adminNotes
+      });
+
       const response = await ajax(`/qd/shop/admin/orders/${this.selectedOrder.id}/status`, {
         type: "PATCH",
         data: {
@@ -181,25 +190,35 @@ export default class QdShopAdminOrdersController extends Controller {
         }
       });
 
+      console.log("📥 状态更新响应:", response);
+
       if (response.status === "success") {
-        this.statusMessage = "订单状态更新成功！";
+        this.statusMessage = response.message || "订单状态更新成功！";
         
         // 更新本地数据
         const orderIndex = this.model.orders.findIndex(o => o.id === this.selectedOrder.id);
         if (orderIndex !== -1) {
           this.model.orders[orderIndex].status = this.newStatus;
           this.model.orders[orderIndex].updated_at = new Date().toISOString();
+          // 触发界面更新
+          this.notifyPropertyChange('model');
+        }
+
+        // 如果是取消订单，显示特殊提示
+        if (this.newStatus === 'cancelled' && response.data?.refunded) {
+          this.statusMessage = "✅ 订单已取消，积分已自动返还给用户！";
         }
 
         setTimeout(() => {
           this.closeStatusModal();
-        }, 1500);
+        }, 2000);
       } else {
         this.statusMessage = response.message || "更新失败";
       }
     } catch (error) {
       console.error("更新订单状态失败:", error);
-      this.statusMessage = "更新失败：" + (error.message || "网络错误");
+      const errorMessage = error.jqXHR?.responseJSON?.message || error.message || "网络错误";
+      this.statusMessage = "❌ 更新失败：" + errorMessage;
     } finally {
       this.isLoading = false;
     }

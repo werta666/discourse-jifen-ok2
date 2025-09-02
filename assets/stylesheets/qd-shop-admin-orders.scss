@@ -84,6 +84,48 @@
   }
 }
 
+// 管理员备注样式
+.admin-notes-row {
+  margin: 8px -15px -15px -15px !important;
+  padding: 12px 15px !important;
+  background: #f0f8ff !important;
+  border-radius: 0 0 8px 8px !important;
+  border-top: 1px solid #e3f2fd !important;
+  align-items: flex-start !important;
+  
+  .detail-label {
+    color: #1976d2 !important;
+    font-weight: 600 !important;
+    min-width: 50px !important;
+  }
+  
+  .admin-notes {
+    color: #333 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    max-width: 70% !important;
+    text-align: right !important;
+  }
+}
+
+// 调整总价行的样式，为备注留出空间
+.detail-row.total {
+  margin: 8px -15px 0 -15px !important;
+  border-radius: 8px !important;
+}
+
+// 移动端适配管理员备注
+@media (max-width: 768px) {
+  .admin-notes-row {
+    .admin-notes {
+      max-width: 100% !important;
+      text-align: left !important;
+    }
+  }
+}
+
 // 统计面板
 .qd-admin-stats {
   display: flex;
@@ -106,7 +148,7 @@
     }
     
     &.pending {
-      border-left: 4px solid var(--highlight-medium, #ffc107);
+      border-left: 4px solid #1976d2;
     }
     
     &.completed {
@@ -114,7 +156,7 @@
     }
     
     &.cancelled {
-      border-left: 4px solid var(--danger, #dc3545);
+      border-left: 4px solid #c62828;
     }
     
     .stats-label {
@@ -153,6 +195,22 @@
     border-color: var(--primary-medium, #666666);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+  }
+  
+  // 已取消订单的特殊样式
+  &.cancelled-order {
+    background: #fafafa;
+    border-color: #c62828;
+    opacity: 0.8;
+    
+    &:hover {
+      transform: none;
+      box-shadow: 0 2px 8px rgba(198, 40, 40, 0.2);
+    }
+    
+    .order-header {
+      border-bottom-color: #c62828;
+    }
   }
   
   .order-header {
@@ -194,13 +252,15 @@
         }
         
         &.status-pending {
-          background: var(--highlight-low, #fff3cd);
-          color: var(--highlight-medium, #ffc107);
+          background: #e3f2fd;
+          color: #1976d2;
+          border: 1px solid #1976d2;
         }
         
         &.status-cancelled {
-          background: var(--danger-low, #f8d7da);
-          color: var(--danger, #dc3545);
+          background: #ffebee;
+          color: #c62828;
+          border: 1px solid #c62828;
         }
         
         &.status-unknown {

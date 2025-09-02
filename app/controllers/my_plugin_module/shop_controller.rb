@@ -553,35 +553,35 @@ class MyPluginModule::ShopController < ApplicationController
         return
       end
       
-      order = MyPluginModule::ShopOrder.find_by(id: order_id)
-      
-      if order.nil?
-        render json: {
-          status: "error", 
-          message: "订单不存在"
-        }, status: 404
-        return
-      end
-      
-      # 如果订单是已取消状态，返还积分
-      if order.status == 'cancelled'
-        user = User.find_by(id: order.user_id)
-        if user
-          MyPluginModule::JifenService.adjust_points!(
-            current_user,
-            user,
-            order.total_price,
-            "订单删除退款 - 订单##{order.id}"
-          )
+      if ActiveRecord::Base.connection.table_exists?('qd_shop_orders')
+        order = MyPluginModule::ShopOrder.find_by(id: order_id)
+        
+        if order.nil?
+          render json: {
+            status: "error", 
+            message: "订单不存在"
+          }, status: 404
+          return
         end
+        
+        # 记录订单信息用于日志
+        order_info = "订单##{order.id} - 用户#{order.user_id} - #{order.product_name} - #{order.total_price}积分"
+        
+        # 删除订单（不管状态如何都可以删除）
+        order.destroy!
+        
+        Rails.logger.info "🗑️ 管理员#{current_user.username} 删除了#{order_info}"
+        
+        render json: {
+          status: "success",
+          message: "订单删除成功"
+        }
+      else
+        render json: {
+          status: "error",
+          message: "订单表不存在"
+        }, status: 500
       end
-      
-      order.destroy!
-      
-      render json: {
-        status: "success",
-        message: "订单删除成功"
-      }
       
     rescue => e
       Rails.logger.error "删除订单失败: #{e.message}"
@@ -602,10 +602,12 @@ class MyPluginModule::ShopController < ApplicationController
       new_status = params[:status] || params.dig(:data, :status)
       admin_notes = params[:admin_notes] || params.dig(:data, :admin_notes) || ""
       
+      Rails.logger.info "🔄 更新订单状态请求: order_id=#{order_id}, new_status=#{new_status}, admin_notes=#{admin_notes}"
+      
       unless ['pending', 'completed', 'cancelled'].include?(new_status)
         render json: {
           status: "error",
-          message: "无效的订单状态"
+          message: "无效的订单状态: #{new_status}"
         }, status: 422
         return
       end
@@ -622,38 +624,48 @@ class MyPluginModule::ShopController < ApplicationController
         end
         
         old_status = order.status
+        user = User.find_by(id: order.user_id)
         
-        # 如果状态改为已取消，返还积分
-        if new_status == 'cancelled' && old_status != 'cancelled'
-          user = User.find_by(id: order.user_id)
-          if user
-            MyPluginModule::JifenService.adjust_points!(
-              current_user,
-              user,
-              order.total_price,
-              "订单取消退款 - 订单##{order.id}"
-            )
+        # 使用数据库事务确保数据一致性
+        ActiveRecord::Base.transaction do
+          # 如果状态改为已取消，返还积分
+          if new_status == 'cancelled' && old_status != 'cancelled'
+            if user
+              MyPluginModule::JifenService.adjust_points!(
+                current_user,
+                user,
+                order.total_price,
+                "订单取消退款 - 订单##{order.id} - #{order.product_name}"
+              )
+              Rails.logger.info "💰 订单##{order.id} 取消，已返还 #{order.total_price} 积分给用户 #{user.username}"
+            end
           end
+          
+          # 更新订单状态和备注
+          updated_notes = order.notes || ""
+          if admin_notes.present?
+            updated_notes += "
+[#{Time.current.strftime('%Y-%m-%d %H:%M')} 管理员备注] #{admin_notes}"
+          end
+          
+          order.update!(
+            status: new_status,
+            notes: updated_notes,
+            updated_at: Time.current
+          )
         end
         
-        order.update!(
-          status: new_status,
-          notes: admin_notes.present? ? "#{order.notes}
-[管理员备注] #{admin_notes}" : order.notes,
-          updated_at: Time.current
-        )
-        
-        user = User.find_by(id: order.user_id)
         Rails.logger.info "🛒 管理员#{current_user.username} 将订单##{order.id} 状态从 #{old_status} 更新为 #{new_status}"
         
         render json: {
           status: "success",
-          message: "订单状态更新成功",
+          message: new_status == 'cancelled' ? "订单已取消，积分已返还给用户" : "订单状态更新成功",
           data: {
             id: order.id,
             old_status: old_status,
             new_status: new_status,
-            username: user&.username
+            username: user&.username,
+            refunded: new_status == 'cancelled' && old_status != 'cancelled'
           }
         }
       else
@@ -664,6 +676,8 @@ class MyPluginModule::ShopController < ApplicationController
       end
     rescue => e
       Rails.logger.error "更新订单状态失败: #{e.message}"
+      Rails.logger.error e.backtrace.join("
+")
       render json: {
         status: "error",
         message: "更新订单状态失败: #{e.message}"

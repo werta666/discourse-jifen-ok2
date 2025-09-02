@@ -151,20 +151,22 @@ class MyPluginModule::ShopController < ApplicationController
           # 更新库存
           product.update!(stock: product.stock - quantity)
         
+          # 处理用户备注
+          user_note = params[:user_note].to_s.strip
+          final_product_name = user_note.present? ? "#{product.name} >> #{user_note}" : product.name
+          
           # 创建订单记录
           order = nil
           if ActiveRecord::Base.connection.table_exists?('qd_shop_orders')
             order = MyPluginModule::ShopOrder.create!(
               user_id: current_user.id,
               product_id: product.id,
-              product_name: product.name,
-              product_description: product.description,
-              product_icon: product.icon_class,
+              product_name: final_product_name,
               quantity: quantity,
               unit_price: product.price,
               total_price: total_price,
               status: "pending",
-              notes: notes
+              notes: ""
             )
           end
           

@@ -119,7 +119,7 @@ export default class QdShopController extends Controller {
       const purchaseData = {
         product_id: this.selectedProduct.id,
         quantity: this.purchaseQuantity,
-        notes: this.purchaseRemark || ""
+        user_note: this.purchaseRemark || ""
       };
       
       console.log("🛒 发送购买请求:", purchaseData);

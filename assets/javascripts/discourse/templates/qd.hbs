@@ -242,7 +242,7 @@
         <h4>手动调整积分</h4>
         <div class="debug-form">
           <Input @value={{this.adminUsernameAdjust}} placeholder="用户名，例如: alice" />
-          <Input @value={{this.adminDelta}} @type="number" placeholder="调整值（可正可负），例如：+10 或 -5" />
+          <Input @value={{this.adminDelta}} @type="number" placeholder="调整值（可正可负），无限制，例如：+1000 或 -500" />
           <button class="btn-warning" {{on "click" this.adjustPoints}} disabled={{this.isLoading}}>
             {{if this.isLoading "处理中..." "保存并应用"}}
           </button>

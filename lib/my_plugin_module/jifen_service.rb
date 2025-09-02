@@ -70,9 +70,9 @@ module ::MyPluginModule
       new_spent = before_spent - d
       total = total_points(target_user.id)
 
-      # 约束：可用积分不为负 => new_spent <= total；且 new_spent >= 0
-      new_spent = 0 if new_spent < 0
-      new_spent = total if new_spent > total
+      # 管理员调整积分：移除限制，允许任意调整
+      # new_spent = 0 if new_spent < 0
+      # new_spent = total if new_spent > total
 
       target_user.custom_fields["jifen_spent"] = new_spent
       target_user.save_custom_fields(true)

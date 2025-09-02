@@ -37,20 +37,20 @@
       全部商品
     </button>
     <button 
-      class="filter-btn {{if (eq this.currentFilter 'new') 'active'}}"
-      {{on "click" (fn this.setFilter "new")}}
+      class="filter-btn {{if (eq this.currentFilter '新品') 'active'}}"
+      {{on "click" (fn this.setFilter '新品')}}
     >
       <i class="fa fa-star"></i> 新品
     </button>
     <button 
-      class="filter-btn {{if (eq this.currentFilter 'hot') 'active'}}"
-      {{on "click" (fn this.setFilter "hot")}}
+      class="filter-btn {{if (eq this.currentFilter '热销') 'active'}}"
+      {{on "click" (fn this.setFilter '热销')}}
     >
       <i class="fa fa-fire"></i> 热销
     </button>
     <button 
-      class="filter-btn {{if (eq this.currentFilter 'preorder') 'active'}}"
-      {{on "click" (fn this.setFilter "preorder")}}
+      class="filter-btn {{if (eq this.currentFilter '预购') 'active'}}"
+      {{on "click" (fn this.setFilter '预购')}}
     >
       <i class="fa fa-clock-o"></i> 预购
     </button>
@@ -299,31 +299,37 @@
                   placeholder="请输入商品名称"
                 />
                 
-                <div class="product-tags">
-                  <label class="tag-checkbox">
-                    <input 
-                      type="checkbox" 
-                      checked={{this.newProduct.isNew}}
-                      {{on "change" (fn this.updateProductTag "isNew")}}
-                    />
-                    <span>新品</span>
-                  </label>
-                  <label class="tag-checkbox">
-                    <input 
-                      type="checkbox" 
-                      checked={{this.newProduct.isHot}}
-                      {{on "change" (fn this.updateProductTag "isHot")}}
-                    />
-                    <span>热销</span>
-                  </label>
-                  <label class="tag-checkbox">
-                    <input 
-                      type="checkbox" 
-                      checked={{this.newProduct.isPreorder}}
-                      {{on "change" (fn this.updateProductTag "isPreorder")}}
-                    />
-                    <span>预购</span>
-                  </label>
+                <div class="product-tags-section">
+                  <label class="tags-label">商品标签</label>
+                  <div class="tags-buttons">
+                    <button 
+                      type="button"
+                      class="tag-btn tag-new {{if this.newProduct.selectedTag.new 'active'}}"
+                      {{on "click" (fn this.selectProductTag "new" true)}}
+                    >
+                      <i class="fas fa-star"></i>
+                      <span>新品</span>
+                    </button>
+                    <button 
+                      type="button"
+                      class="tag-btn tag-hot {{if this.newProduct.selectedTag.hot 'active'}}"
+                      {{on "click" (fn this.selectProductTag "hot" true)}}
+                    >
+                      <i class="fas fa-fire"></i>
+                      <span>热销</span>
+                    </button>
+                    <button 
+                      type="button"
+                      class="tag-btn tag-preorder {{if this.newProduct.selectedTag.preorder 'active'}}"
+                      {{on "click" (fn this.selectProductTag "preorder" true)}}
+                    >
+                      <i class="fas fa-clock"></i>
+                      <span>预购</span>
+                    </button>
+                  </div>
+                  <div class="tags-hint">
+                    💡 选择标签后会自动在商品名称前添加对应前缀，默认为新品
+                  </div>
                 </div>
               </div>
               

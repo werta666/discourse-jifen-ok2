@@ -25,8 +25,8 @@ export default class QdShopController extends Controller {
     price: 100,
     stock: 50,
     sort_order: 0,
-    tags: {
-      new: false,
+    selectedTag: {
+      new: true,  // 默认选中新品
       hot: false,
       preorder: false
     }
@@ -39,6 +39,8 @@ export default class QdShopController extends Controller {
   constructor() {
     super(...arguments);
     this.resetNewProduct();
+    // 确保默认选中新品并设置前缀
+    this.updateProductNameWithTags(this.newProduct);
   }
 
   @action
@@ -190,14 +192,14 @@ export default class QdShopController extends Controller {
     }
     
     return this.model.products.filter(product => {
-      const name = product.name.toLowerCase();
+      const name = product.name;
       switch (this.currentFilter) {
         case "新品":
-          return name.includes("新品");
+          return name.includes("<新品>");
         case "热销":
-          return name.includes("热销");
+          return name.includes("<热销>");
         case "预购":
-          return name.includes("预购");
+          return name.includes("<预购>");
         default:
           return true;
       }
@@ -299,14 +301,14 @@ export default class QdShopController extends Controller {
   @action
   resetNewProduct() {
     this.newProduct = {
-      name: "",
+      name: "<新品>-",
       description: "",
       icon_class: "fa-gift",
       price: 100,
       stock: 50,
       sort_order: 0,
-      tags: {
-        new: false,
+      selectedTag: {
+        new: true,  // 默认选中新品
         hot: false,
         preorder: false
       }
@@ -335,7 +337,7 @@ export default class QdShopController extends Controller {
       price: product.price || 0,
       stock: product.stock || 0,
       sort_order: product.sort_order || 0,
-      tags: {
+      selectedTag: {
         new: false,
         hot: false,
         preorder: false
@@ -465,33 +467,39 @@ export default class QdShopController extends Controller {
 
   // 商品标签管理功能
   @action
-  toggleProductTag(tagType, isNewProduct = true) {
+  selectProductTag(tagType, isNewProduct = true) {
     const product = isNewProduct ? this.newProduct : this.editingProduct;
-    if (!product.tags) {
-      product.tags = { new: false, hot: false, preorder: false };
+    if (!product.selectedTag) {
+      product.selectedTag = { new: false, hot: false, preorder: false };
     }
     
-    product.tags[tagType] = !product.tags[tagType];
+    // 重置所有标签为false
+    product.selectedTag.new = false;
+    product.selectedTag.hot = false;
+    product.selectedTag.preorder = false;
     
-    // 更新产品名称，添加或移除标签前缀
+    // 设置选中的标签为true
+    product.selectedTag[tagType] = true;
+    
+    // 更新产品名称，添加对应的标签前缀
     this.updateProductNameWithTags(product);
   }
 
   @action
   updateProductNameWithTags(product) {
-    if (!product || !product.tags) return;
+    if (!product || !product.selectedTag) return;
     
     // 移除现有的标签前缀
     let baseName = product.name;
-    baseName = baseName.replace(/^\(新品\)-/, '');
-    baseName = baseName.replace(/^\(热销\)-/, '');
-    baseName = baseName.replace(/^\(预购\)-/, '');
+    baseName = baseName.replace(/^<新品>-/, '');
+    baseName = baseName.replace(/^<热销>-/, '');
+    baseName = baseName.replace(/^<预购>-/, '');
     
     // 添加新的标签前缀
     let prefix = '';
-    if (product.tags.new) prefix = '(新品)-';
-    else if (product.tags.hot) prefix = '(热销)-';
-    else if (product.tags.preorder) prefix = '(预购)-';
+    if (product.selectedTag.new) prefix = '<新品>-';
+    else if (product.selectedTag.hot) prefix = '<热销>-';
+    else if (product.selectedTag.preorder) prefix = '<预购>-';
     
     product.name = prefix + baseName;
   }
@@ -499,16 +507,19 @@ export default class QdShopController extends Controller {
   @action
   initializeProductTags(product) {
     // 从产品名称中解析现有标签
-    if (!product.tags) {
-      product.tags = { new: false, hot: false, preorder: false };
+    if (!product.selectedTag) {
+      product.selectedTag = { new: false, hot: false, preorder: false };
     }
     
-    if (product.name.includes('(新品)-')) {
-      product.tags.new = true;
-    } else if (product.name.includes('(热销)-')) {
-      product.tags.hot = true;
-    } else if (product.name.includes('(预购)-')) {
-      product.tags.preorder = true;
+    if (product.name.includes('<新品>-')) {
+      product.selectedTag.new = true;
+    } else if (product.name.includes('<热销>-')) {
+      product.selectedTag.hot = true;
+    } else if (product.name.includes('<预购>-')) {
+      product.selectedTag.preorder = true;
+    } else {
+      // 默认为新品
+      product.selectedTag.new = true;
     }
   }
 }

@@ -498,6 +498,10 @@ class MyPluginModule::ShopController < ApplicationController
             product_name: order.product_name,
             product_description: order.product_description,
             product_icon: order.product_icon,
+            item_name: order.product_name,  # 兼容模板中的字段名
+            item_description: order.product_description,  # 兼容模板中的字段名
+            item_icon: order.product_icon,  # 兼容模板中的字段名
+            item_price: order.unit_price,  # 兼容模板中的字段名
             quantity: order.quantity,
             unit_price: order.unit_price,
             total_price: order.total_price,

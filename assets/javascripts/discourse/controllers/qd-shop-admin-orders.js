@@ -156,7 +156,17 @@ export default class QdShopAdminOrdersController extends Controller {
   }
 
   @action
-  async updateOrderStatus() {
+  updateOrderStatus(event) {
+    this.newStatus = event.target.value;
+  }
+
+  @action
+  updateAdminNotes(event) {
+    this.adminNotes = event.target.value;
+  }
+
+  @action
+  async confirmUpdateOrder() {
     if (!this.selectedOrder || !this.newStatus) return;
 
     this.isLoading = true;
@@ -193,6 +203,11 @@ export default class QdShopAdminOrdersController extends Controller {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  @action
+  stopPropagation(event) {
+    event.stopPropagation();
   }
 
   @action

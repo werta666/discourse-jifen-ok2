@@ -98,21 +98,32 @@
               
               <div class="order-details">
                 <div class="detail-row">
-                  <span class="detail-label">数量:</span>
-                  <span class="detail-value">{{order.quantity}} 件</span>
+                  <span class="detail-label">商品ID:</span>
+                  <span class="detail-value">{{order.product_id}}</span>
                 </div>
-                <div class="detail-row">
-                  <span class="detail-label">单价:</span>
-                  <span class="detail-value">{{order.unit_price}} 积分</span>
+              </div>
+              
+              {{! 价格和备注信息区域 }}
+              <div class="price-notes-section">
+                <div class="price-info">
+                  <div class="price-row">
+                    <span class="price-label">数量:</span>
+                    <span class="price-value">{{order.quantity}} 件</span>
+                  </div>
+                  <div class="price-row">
+                    <span class="price-label">单价:</span>
+                    <span class="price-value">{{order.unit_price}} 积分</span>
+                  </div>
+                  <div class="price-row total-price">
+                    <span class="price-label">总价:</span>
+                    <span class="price-value">{{order.total_price}} 积分</span>
+                  </div>
                 </div>
-                <div class="detail-row total">
-                  <span class="detail-label">总价:</span>
-                  <span class="detail-value">{{order.total_price}} 积分</span>
-                </div>
+                
                 {{#if order.notes}}
-                  <div class="detail-row admin-notes-row">
-                    <span class="detail-label">备注:</span>
-                    <span class="detail-value admin-notes">{{order.notes}}</span>
+                  <div class="notes-info">
+                    <span class="notes-label">管理员备注</span>
+                    <div class="notes-content">{{order.notes}}</div>
                   </div>
                 {{/if}}
               </div>

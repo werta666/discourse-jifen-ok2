@@ -599,10 +599,10 @@ class MyPluginModule::ShopController < ApplicationController
     
     begin
       order_id = params[:id]&.to_i
-      new_status = params[:status] || params.dig(:data, :status)
-      admin_notes = params[:admin_notes] || params.dig(:data, :admin_notes) || ""
+      new_status = params[:status]&.to_s&.strip
+      admin_notes = params[:admin_notes]&.to_s&.strip || ""
       
-      Rails.logger.info "🔄 更新订单状态请求: order_id=#{order_id}, new_status=#{new_status}, admin_notes=#{admin_notes}"
+      Rails.logger.info "🔄 更新订单状态请求: order_id=#{order_id}, new_status='#{new_status}', admin_notes='#{admin_notes}'"
       
       unless ['pending', 'completed', 'cancelled'].include?(new_status)
         render json: {

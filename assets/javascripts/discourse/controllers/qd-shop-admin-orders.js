@@ -179,14 +179,14 @@ export default class QdShopAdminOrdersController extends Controller {
       console.log("🔄 发送状态更新请求:", {
         orderId: this.selectedOrder.id,
         newStatus: this.newStatus,
-        adminNotes: this.adminNotes
+        adminNotes: this.adminNotes || ""
       });
 
       const response = await ajax(`/qd/shop/admin/orders/${this.selectedOrder.id}/status`, {
         type: "PATCH",
         data: {
           status: this.newStatus,
-          admin_notes: this.adminNotes
+          admin_notes: this.adminNotes || ""
         }
       });
 
@@ -227,6 +227,45 @@ export default class QdShopAdminOrdersController extends Controller {
   @action
   stopPropagation(event) {
     event.stopPropagation();
+  }
+
+  @action
+  async refreshOrders() {
+    this.isLoading = true;
+    this.statusMessage = "";
+    
+    try {
+      console.log("🔄 刷新管理员订单列表");
+      
+      // 重新加载订单数据
+      const response = await ajax("/qd/shop/admin/orders", {
+        type: "GET",
+        data: {
+          page: this.currentPage || 1
+        }
+      });
+      
+      if (response.status === "success") {
+        // 更新模型数据
+        this.model.orders = response.data.orders || [];
+        this.model.total_count = response.data.total_count || 0;
+        this.model.current_page = response.data.current_page || 1;
+        this.model.total_pages = response.data.total_pages || 1;
+        
+        // 触发界面更新
+        this.notifyPropertyChange('model');
+        
+        console.log("✅ 订单列表刷新成功，共", this.model.orders.length, "条订单");
+      } else {
+        console.error("❌ 刷新失败:", response.message);
+        this.statusMessage = "刷新失败: " + (response.message || "未知错误");
+      }
+    } catch (error) {
+      console.error("❌ 刷新订单列表失败:", error);
+      this.statusMessage = "刷新失败: " + (error.message || "网络错误");
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   @action

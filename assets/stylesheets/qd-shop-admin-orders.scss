@@ -84,36 +84,88 @@
   }
 }
 
-// 管理员备注样式
-.admin-notes-row {
-  margin: 8px -15px -15px -15px !important;
-  padding: 12px 15px !important;
-  background: #f0f8ff !important;
-  border-radius: 0 0 8px 8px !important;
-  border-top: 1px solid #e3f2fd !important;
-  align-items: flex-start !important;
+// 价格和备注信息区域
+.price-notes-section {
+  background: var(--primary-very-low, #f8f9fa);
+  margin: 8px -15px -15px -15px;
+  padding: 15px;
+  border-radius: 0 0 8px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
   
-  .detail-label {
-    color: #1976d2 !important;
-    font-weight: 600 !important;
-    min-width: 50px !important;
+  .price-info {
+    flex: 1;
+    
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      &.total-price {
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--tertiary, #0088cc);
+        padding-top: 8px;
+        border-top: 1px solid #e3f2fd;
+      }
+    }
+    
+    .price-label {
+      font-weight: 500;
+      color: var(--primary-medium, #666666);
+    }
+    
+    .price-value {
+      color: var(--primary, #333333);
+    }
   }
   
-  .admin-notes {
-    color: #333 !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
-    max-width: 70% !important;
-    text-align: right !important;
+  .notes-info {
+    flex: 1;
+    background: #f0f8ff;
+    border: 1px solid #e3f2fd;
+    border-radius: 8px;
+    padding: 12px;
+    
+    .notes-label {
+      color: #1976d2;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: block;
+    }
+    
+    .notes-content {
+      color: #333;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 80px;
+      overflow-y: auto;
+    }
   }
 }
 
-// 调整总价行的样式，为备注留出空间
-.detail-row.total {
-  margin: 8px -15px 0 -15px !important;
-  border-radius: 8px !important;
+// 移动端适配
+@media (max-width: 768px) {
+  .price-notes-section {
+    flex-direction: column;
+    gap: 15px;
+    
+    .price-info,
+    .notes-info {
+      flex: none;
+      width: 100%;
+    }
+  }
 }
 
 // 移动端适配管理员备注

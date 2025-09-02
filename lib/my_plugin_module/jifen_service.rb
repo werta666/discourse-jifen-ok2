@@ -60,6 +60,7 @@ module ::MyPluginModule
 
     # 手动调整积分（管理员）：delta>0 增加可用积分，delta<0 减少可用积分
     # 通过调整 jifen_spent 实现，并写入后台操作日志
+    # 管理员可以无限制地增加或减少积分，不受总积分限制
     def adjust_points!(acting_user, target_user, delta)
       d = delta.to_i
       raise StandardError, "调整值不能为 0" if d == 0
@@ -68,11 +69,10 @@ module ::MyPluginModule
       before_avail = available_total_points(target_user)
 
       new_spent = before_spent - d
-      total = total_points(target_user.id)
-
-      # 约束：可用积分不为负 => new_spent <= total；且 new_spent >= 0
+      
+      # 管理员调整：移除限制，允许负的 spent（即可用积分超过总积分）
+      # 只保留最基本的约束：spent 不能为负数（避免数据异常）
       new_spent = 0 if new_spent < 0
-      new_spent = total if new_spent > total
 
       target_user.custom_fields["jifen_spent"] = new_spent
       target_user.save_custom_fields(true)

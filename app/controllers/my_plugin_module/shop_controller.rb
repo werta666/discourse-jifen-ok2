@@ -626,46 +626,29 @@ class MyPluginModule::ShopController < ApplicationController
         old_status = order.status
         user = User.find_by(id: order.user_id)
         
-        # 使用数据库事务确保数据一致性
-        ActiveRecord::Base.transaction do
-          # 如果状态改为已取消，返还积分
-          if new_status == 'cancelled' && old_status != 'cancelled'
-            if user
-              MyPluginModule::JifenService.adjust_points!(
-                current_user,
-                user,
-                order.total_price,
-                "订单取消退款 - 订单##{order.id} - #{order.product_name}"
-              )
-              Rails.logger.info "💰 订单##{order.id} 取消，已返还 #{order.total_price} 积分给用户 #{user.username}"
-            end
-          end
-          
-          # 更新订单状态和备注
-          updated_notes = order.notes || ""
-          if admin_notes.present?
-            updated_notes += "
+        # 更新订单状态和备注
+        updated_notes = order.notes || ""
+        if admin_notes.present?
+          updated_notes += "
 [#{Time.current.strftime('%Y-%m-%d %H:%M')} 管理员备注] #{admin_notes}"
-          end
-          
-          order.update!(
-            status: new_status,
-            notes: updated_notes,
-            updated_at: Time.current
-          )
         end
+        
+        order.update!(
+          status: new_status,
+          notes: updated_notes,
+          updated_at: Time.current
+        )
         
         Rails.logger.info "🛒 管理员#{current_user.username} 将订单##{order.id} 状态从 #{old_status} 更新为 #{new_status}"
         
         render json: {
           status: "success",
-          message: new_status == 'cancelled' ? "订单已取消，积分已返还给用户" : "订单状态更新成功",
+          message: "订单状态更新成功",
           data: {
             id: order.id,
             old_status: old_status,
             new_status: new_status,
-            username: user&.username,
-            refunded: new_status == 'cancelled' && old_status != 'cancelled'
+            username: user&.username
           }
         }
       else

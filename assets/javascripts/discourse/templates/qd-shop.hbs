@@ -36,16 +36,10 @@
           <div class="qd-product-card">
             <div class="product-image">
               <div class="product-placeholder">
-                {{#if (eq product.id 1)}}
-                  <i class="fa fa-rocket" style="color: #e74c3c;"></i>
-                {{else if (eq product.id 2)}}
-                  <i class="fa fa-calendar-plus" style="color: #3498db;"></i>
-                {{else if (eq product.id 3)}}
-                  <i class="fa fa-treasure-chest" style="color: #f39c12;"></i>
-                {{else if (eq product.id 4)}}
-                  <i class="fa fa-circle-notch" style="color: #9b59b6;"></i>
+                {{#if product.icon_class}}
+                  <i class="fa {{product.icon_class}}"></i>
                 {{else}}
-                  <i class="fa fa-gift" style="color: #95a5a6;"></i>
+                  <i class="fa fa-gift"></i>
                 {{/if}}
               </div>
             </div>
@@ -151,16 +145,10 @@
           {{#if this.selectedProduct}}
             <div class="qd-product-summary">
                 <div class="product-thumb-placeholder">
-                  {{#if (eq this.selectedProduct.id 1)}}
-                    <i class="fa fa-rocket" style="color: #e74c3c;"></i>
-                  {{else if (eq this.selectedProduct.id 2)}}
-                    <i class="fa fa-calendar-plus" style="color: #3498db;"></i>
-                  {{else if (eq this.selectedProduct.id 3)}}
-                    <i class="fa fa-treasure-chest" style="color: #f39c12;"></i>
-                  {{else if (eq this.selectedProduct.id 4)}}
-                    <i class="fa fa-circle-notch" style="color: #9b59b6;"></i>
+                  {{#if this.selectedProduct.icon_class}}
+                    <i class="fa {{this.selectedProduct.icon_class}}"></i>
                   {{else}}
-                    <i class="fa fa-gift" style="color: #95a5a6;"></i>
+                    <i class="fa fa-gift"></i>
                   {{/if}}
                 </div>
                 

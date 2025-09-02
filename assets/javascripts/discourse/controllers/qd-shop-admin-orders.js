@@ -176,10 +176,7 @@ export default class QdShopAdminOrdersController extends Controller {
           this.notifyPropertyChange('model');
         }
 
-        // 如果是取消订单，显示特殊提示
-        if (this.newStatus === 'cancelled' && response.data?.refunded) {
-          this.statusMessage = "✅ 订单已取消，积分已自动返还给用户！";
-        }
+
 
         setTimeout(() => {
           this.closeStatusModal();

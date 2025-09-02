@@ -630,7 +630,7 @@ class MyPluginModule::ShopController < ApplicationController
         updated_notes = order.notes || ""
         if admin_notes.present?
           updated_notes += "
-[#{Time.current.strftime('%Y-%m-%d %H:%M')} 管理员备注] #{admin_notes}"
+[管理员留言] #{admin_notes}"
         end
         
         order.update!(

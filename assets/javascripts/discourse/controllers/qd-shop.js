@@ -13,6 +13,8 @@ export default class QdShopController extends Controller {
   @tracked purchaseQuantity = 1;
   @tracked purchaseRemark = "";
   @tracked isLoading = false;
+  @tracked showSuccessPopup = false;
+  @tracked successMessage = "";
   
   // 管理员添加商品表单
   @tracked newProduct = {
@@ -137,15 +139,8 @@ export default class QdShopController extends Controller {
           this.model.userPoints = result.data.remaining_points;
         }
         
-        // 显示成功消息
-        const successMessage = `🎉 购买成功！
-
-📦 商品：${result.data.product_name}
-🔢 数量：${result.data.quantity}
-💰 消耗积分：${result.data.total_price}
-💳 剩余积分：${result.data.remaining_points}`;
-        
-        alert(successMessage);
+        // 显示绿色主题成功消息
+        this.showSuccessMessage('购买成功！');
         
         this.closePurchaseModal();
         
@@ -397,5 +392,22 @@ export default class QdShopController extends Controller {
   @action
   goToAdminOrders() {
     this.router.transitionTo("qd-shop-admin-orders");
+  }
+
+  @action
+  showSuccessMessage(message) {
+    this.successMessage = message;
+    this.showSuccessPopup = true;
+    
+    // 3秒后自动隐藏
+    setTimeout(() => {
+      this.hideSuccessMessage();
+    }, 3000);
+  }
+
+  @action
+  hideSuccessMessage() {
+    this.showSuccessPopup = false;
+    this.successMessage = "";
   }
 }

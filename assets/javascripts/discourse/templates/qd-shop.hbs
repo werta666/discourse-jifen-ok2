@@ -504,4 +504,38 @@
       </div>
     </div>
   {{/if}}
+
+  {{! 绿色主题成功弹框 }}
+  {{#if this.showSuccessPopup}}
+    <div class="qd-success-popup-backdrop" {{on "click" this.hideSuccessMessage}}>
+      <div class="qd-success-popup">
+        <div class="qd-success-icon">
+          <i class="fa fa-check-circle"></i>
+        </div>
+        <div class="qd-success-message">
+          {{this.successMessage}}
+        </div>
+        <button class="qd-success-close" {{on "click" this.hideSuccessMessage}}>
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+    </div>
+  {{/if}}
+
+  {{! 绿色主题成功弹框 }}
+  {{#if this.showSuccessPopup}}
+    <div class="qd-success-popup-backdrop" {{on "click" this.hideSuccessMessage}}>
+      <div class="qd-success-popup">
+        <div class="qd-success-icon">
+          <i class="fa fa-check-circle"></i>
+        </div>
+        <div class="qd-success-message">
+          {{this.successMessage}}
+        </div>
+        <button class="qd-success-close" {{on "click" this.hideSuccessMessage}}>
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+    </div>
+  {{/if}}
 </div>

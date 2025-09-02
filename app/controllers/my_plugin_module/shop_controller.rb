@@ -533,6 +533,61 @@ class MyPluginModule::ShopController < ApplicationController
     end
   end
   
+  # 管理员功能 - 删除订单
+  def delete_order
+    ensure_logged_in
+    ensure_admin
+    
+    begin
+      order_id = params[:id]&.to_i
+      
+      if order_id.nil? || order_id <= 0
+        render json: {
+          status: "error",
+          message: "无效的订单ID"
+        }, status: 400
+        return
+      end
+      
+      order = MyPluginModule::ShopOrder.find_by(id: order_id)
+      
+      if order.nil?
+        render json: {
+          status: "error", 
+          message: "订单不存在"
+        }, status: 404
+        return
+      end
+      
+      # 如果订单是已取消状态，返还积分
+      if order.status == 'cancelled'
+        user = User.find_by(id: order.user_id)
+        if user
+          MyPluginModule::JifenService.adjust_points!(
+            current_user,
+            user,
+            order.total_price,
+            "订单删除退款 - 订单##{order.id}"
+          )
+        end
+      end
+      
+      order.destroy!
+      
+      render json: {
+        status: "success",
+        message: "订单删除成功"
+      }
+      
+    rescue => e
+      Rails.logger.error "删除订单失败: #{e.message}"
+      render json: {
+        status: "error",
+        message: "删除订单失败: #{e.message}"
+      }, status: 500
+    end
+  end
+
   # 管理员功能 - 更新订单状态
   def update_order_status
     ensure_logged_in
@@ -563,6 +618,20 @@ class MyPluginModule::ShopController < ApplicationController
         end
         
         old_status = order.status
+        
+        # 如果状态改为已取消，返还积分
+        if new_status == 'cancelled' && old_status != 'cancelled'
+          user = User.find_by(id: order.user_id)
+          if user
+            MyPluginModule::JifenService.adjust_points!(
+              current_user,
+              user,
+              order.total_price,
+              "订单取消退款 - 订单##{order.id}"
+            )
+          end
+        end
+        
         order.update!(
           status: new_status,
           notes: admin_notes.present? ? "#{order.notes}

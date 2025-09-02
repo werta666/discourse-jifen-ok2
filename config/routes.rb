@@ -48,4 +48,5 @@ MyPluginModule::Engine.routes.draw do
   # 管理员订单管理路由
   get "/shop/admin/orders" => "shop#admin_orders"
   patch "/shop/admin/orders/:id/status" => "shop#update_order_status"
+  delete "/shop/admin/orders/:id" => "shop#delete_order"
 end

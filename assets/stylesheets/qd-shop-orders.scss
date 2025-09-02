@@ -142,8 +142,9 @@
         }
         
         &.status-pending {
-          background: var(--highlight-low);
-          color: var(--highlight-medium);
+          background: #e3f2fd;
+          color: #1565c0;
+          border: 1px solid #bbdefb;
         }
         
         &.status-cancelled {

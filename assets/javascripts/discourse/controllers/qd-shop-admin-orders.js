@@ -12,6 +12,12 @@ export default class QdShopAdminOrdersController extends Controller {
   @tracked newStatus = "";
   @tracked adminNotes = "";
   @tracked statusMessage = "";
+  @tracked currentFilter = "all";
+  @tracked currentPage = 1;
+  @tracked pageSize = 8;
+  @tracked currentFilter = "all";
+  @tracked currentPage = 1;
+  @tracked pageSize = 8;
 
   get totalOrders() {
     return this.model?.pagination?.total_count || 0;
@@ -30,6 +36,39 @@ export default class QdShopAdminOrdersController extends Controller {
   get cancelledOrders() {
     if (!this.model?.orders) return 0;
     return this.model.orders.filter(order => order.status === "cancelled").length;
+  }
+
+  get allOrders() {
+    return this.model?.orders || [];
+  }
+
+  get filteredOrders() {
+    if (this.currentFilter === "all") {
+      return this.allOrders;
+    }
+    return this.allOrders.filter(order => order.status === this.currentFilter);
+  }
+
+  get paginatedOrders() {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredOrders.slice(startIndex, endIndex);
+  }
+
+  get totalPages() {
+    return Math.ceil(this.filteredOrders.length / this.pageSize);
+  }
+
+  get hasMultiplePages() {
+    return this.totalPages > 1;
+  }
+
+  get hasPreviousPage() {
+    return this.currentPage > 1;
+  }
+
+  get hasNextPage() {
+    return this.currentPage < this.totalPages;
   }
 
   @action
@@ -60,6 +99,60 @@ export default class QdShopAdminOrdersController extends Controller {
     this.newStatus = "";
     this.adminNotes = "";
     this.statusMessage = "";
+  }
+
+  @action
+  setFilter(filter) {
+    this.currentFilter = filter;
+    this.currentPage = 1; // 重置到第一页
+  }
+
+  @action
+  goToPage(page) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  @action
+  previousPage() {
+    if (this.hasPreviousPage) {
+      this.currentPage--;
+    }
+  }
+
+  @action
+  nextPage() {
+    if (this.hasNextPage) {
+      this.currentPage++;
+    }
+  }
+
+  @action
+  async deleteOrder(order) {
+    if (!confirm(`确定要删除订单 #${order.id} 吗？此操作不可恢复。`)) {
+      return;
+    }
+
+    try {
+      const response = await ajax(`/qd/shop/admin/orders/${order.id}`, {
+        type: "DELETE"
+      });
+
+      if (response.status === "success") {
+        alert("✅ " + response.message);
+        // 从本地数据中移除订单
+        const orderIndex = this.model.orders.findIndex(o => o.id === order.id);
+        if (orderIndex !== -1) {
+          this.model.orders.splice(orderIndex, 1);
+        }
+      } else {
+        alert("❌ " + response.message);
+      }
+    } catch (error) {
+      console.error("删除订单失败:", error);
+      alert("❌ 删除订单失败：" + (error.message || "网络错误"));
+    }
   }
 
   @action

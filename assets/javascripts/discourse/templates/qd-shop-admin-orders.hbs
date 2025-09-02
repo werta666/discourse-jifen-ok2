@@ -21,21 +21,21 @@
     </div>
   </div>
 
-  {{! 统计面板 }}
+  {{! 统计面板 - 可点击筛选 }}
   <div class="qd-admin-stats">
-    <div class="stats-item">
+    <div class="stats-item {{if (eq this.currentFilter 'all') 'active'}}" {{on "click" (action "setFilter" "all")}}>
       <span class="stats-label">总订单数</span>
       <span class="stats-value">{{this.totalOrders}}</span>
     </div>
-    <div class="stats-item pending">
+    <div class="stats-item pending {{if (eq this.currentFilter 'pending') 'active'}}" {{on "click" (action "setFilter" "pending")}}>
       <span class="stats-label">处理中</span>
       <span class="stats-value">{{this.pendingOrders}}</span>
     </div>
-    <div class="stats-item completed">
+    <div class="stats-item completed {{if (eq this.currentFilter 'completed') 'active'}}" {{on "click" (action "setFilter" "completed")}}>
       <span class="stats-label">已完成</span>
       <span class="stats-value">{{this.completedOrders}}</span>
     </div>
-    <div class="stats-item cancelled">
+    <div class="stats-item cancelled {{if (eq this.currentFilter 'cancelled') 'active'}}" {{on "click" (action "setFilter" "cancelled")}}>
       <span class="stats-label">已取消</span>
       <span class="stats-value">{{this.cancelledOrders}}</span>
     </div>
@@ -43,9 +43,9 @@
 
   {{! 订单列表 }}
   <div class="qd-admin-orders-content">
-    {{#if model.orders}}
+    {{#if this.paginatedOrders.length}}
       <div class="qd-admin-orders-list">
-        {{#each model.orders as |order|}}
+        {{#each this.paginatedOrders as |order|}}
           <div class="qd-admin-order-card">
             <div class="order-header">
               <div class="order-id">
@@ -56,13 +56,22 @@
                 <span class="status-badge {{this.getStatusClass order.status}}">
                   {{this.getStatusText order.status}}
                 </span>
-                <button 
-                  class="btn btn-small update-status-btn" 
-                  {{on "click" (action "showUpdateStatusModal" order)}}
-                >
-                  <i class="fa fa-edit"></i>
-                  更新状态
-                </button>
+                <div class="order-actions">
+                  <button 
+                    class="btn btn-small update-status-btn" 
+                    {{on "click" (action "showUpdateStatusModal" order)}}
+                  >
+                    <i class="fa fa-edit"></i>
+                    更新状态
+                  </button>
+                  <button 
+                    class="btn btn-small btn-danger delete-order-btn" 
+                    {{on "click" (action "deleteOrder" order)}}
+                  >
+                    <i class="fa fa-trash"></i>
+                    删除
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -79,125 +88,147 @@
               
               <div class="product-info">
                 <div class="product-icon">
-                  <i class="fa {{order.product_icon}}"></i>
+                  <i class="fa {{order.item_icon}}"></i>
                 </div>
                 <div class="product-details">
-                  <h3 class="product-name">{{order.product_name}}</h3>
-                  {{#if order.product_description}}
-                    <p class="product-description">{{order.product_description}}</p>
-                  {{/if}}
-                  <div class="product-meta">
-                    <span class="quantity">数量: {{order.quantity}}</span>
-                    <span class="unit-price">单价: {{order.unit_price}} 积分</span>
-                  </div>
+                  <h4 class="product-name">{{order.item_name}}</h4>
+                  <p class="product-description">{{order.item_description}}</p>
                 </div>
               </div>
               
-              <div class="order-summary">
-                <div class="total-price">
-                  <span class="price-label">总计</span>
-                  <span class="price-value">{{order.total_price}} 积分</span>
+              <div class="order-details">
+                <div class="detail-row">
+                  <span class="detail-label">数量:</span>
+                  <span class="detail-value">{{order.quantity}} 件</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">单价:</span>
+                  <span class="detail-value">{{order.item_price}} 积分</span>
+                </div>
+                <div class="detail-row total">
+                  <span class="detail-label">总价:</span>
+                  <span class="detail-value">{{order.total_price}} 积分</span>
                 </div>
               </div>
             </div>
             
             <div class="order-footer">
               <div class="order-time">
-                <div class="time-item">
-                  <i class="fa fa-clock-o"></i>
-                  <span>创建: {{this.formatDate order.created_at}}</span>
-                </div>
-                {{#if order.updated_at}}
-                  <div class="time-item">
-                    <i class="fa fa-edit"></i>
-                    <span>更新: {{this.formatDate order.updated_at}}</span>
-                  </div>
-                {{/if}}
+                <span class="time-label">创建时间:</span>
+                <span class="time-value">{{this.formatDate order.created_at}}</span>
               </div>
-              
-              {{#if order.notes}}
-                <div class="order-notes">
-                  <i class="fa fa-sticky-note-o"></i>
-                  <span>{{order.notes}}</span>
+              {{#if order.updated_at}}
+                <div class="order-time">
+                  <span class="time-label">更新时间:</span>
+                  <span class="time-value">{{this.formatDate order.updated_at}}</span>
                 </div>
               {{/if}}
             </div>
           </div>
         {{/each}}
       </div>
-      
-      {{! 分页 }}
-      {{#if (gt model.pagination.total_pages 1)}}
-        <div class="qd-admin-pagination">
-          <span class="pagination-info">
-            第 {{model.pagination.current_page}} 页，共 {{model.pagination.total_pages}} 页
-          </span>
+
+      {{! 分页控件 }}
+      {{#if this.hasMultiplePages}}
+        <div class="qd-pagination">
+          <button 
+            class="btn btn-small pagination-btn" 
+            {{on "click" this.previousPage}}
+            disabled={{not this.hasPreviousPage}}
+          >
+            <i class="fa fa-chevron-left"></i>
+            上一页
+          </button>
+          
+          <div class="pagination-info">
+            第 {{this.currentPage}} 页，共 {{this.totalPages}} 页
+            (显示 {{this.paginatedOrders.length}} / {{this.filteredOrders.length}} 条记录)
+          </div>
+          
+          <button 
+            class="btn btn-small pagination-btn" 
+            {{on "click" this.nextPage}}
+            disabled={{not this.hasNextPage}}
+          >
+            下一页
+            <i class="fa fa-chevron-right"></i>
+          </button>
         </div>
       {{/if}}
-      
     {{else}}
-      <div class="qd-admin-orders-empty">
+      <div class="qd-empty-state">
         <div class="empty-icon">
           <i class="fa fa-inbox"></i>
         </div>
-        <h3>暂无订单</h3>
-        <p>还没有用户购买商品</p>
+        <h3>{{#if (eq this.currentFilter "all")}}暂无订单{{else}}暂无{{this.getStatusText this.currentFilter}}订单{{/if}}</h3>
+        <p>{{#if (eq this.currentFilter "all")}}还没有用户购买商品{{else}}点击其他状态查看更多订单{{/if}}</p>
       </div>
     {{/if}}
   </div>
-</div>
 
-{{! 状态更新弹窗 }}
-{{#if this.showStatusModal}}
-  <div class="qd-status-modal">
-    <div class="qd-status-content">
-      <h3>更新订单状态</h3>
-      
-      <div class="order-info">
-        <p><strong>订单号:</strong> #{{this.selectedOrder.id}}</p>
-        <p><strong>用户:</strong> {{this.selectedOrder.username}}</p>
-        <p><strong>商品:</strong> {{this.selectedOrder.product_name}}</p>
-        <p><strong>当前状态:</strong> {{this.getStatusText this.selectedOrder.status}}</p>
-      </div>
-      
-      <div class="status-form">
-        <label for="new-status">新状态:</label>
-        <select id="new-status" {{on "change" (action (mut this.newStatus) value="target.value")}}>
-          <option value="pending" selected={{eq this.newStatus "pending"}}>处理中</option>
-          <option value="completed" selected={{eq this.newStatus "completed"}}>已完成</option>
-          <option value="cancelled" selected={{eq this.newStatus "cancelled"}}>已取消</option>
-        </select>
-        
-        <label for="admin-notes">管理员备注:</label>
-        <textarea 
-          id="admin-notes" 
-          placeholder="可选的管理员备注..."
-          {{on "input" (action (mut this.adminNotes) value="target.value")}}
-        >{{this.adminNotes}}</textarea>
-      </div>
-      
-      {{#if this.statusMessage}}
-        <div class="status-message {{if (includes this.statusMessage '成功') 'success' 'error'}}">
-          {{this.statusMessage}}
+  {{! 更新状态弹窗 }}
+  {{#if this.showStatusModal}}
+    <div class="qd-modal-backdrop" {{on "click" this.closeStatusModal}}>
+      <div class="qd-modal-content" {{on "click" this.stopPropagation}}>
+        <div class="qd-modal-header">
+          <h3>更新订单状态</h3>
+          <button class="qd-close-btn" {{on "click" this.closeStatusModal}}>
+            <i class="fa fa-times"></i>
+          </button>
         </div>
-      {{/if}}
-      
-      <div class="modal-buttons">
-        <button 
-          class="btn btn-default" 
-          {{on "click" this.closeStatusModal}}
-          disabled={{this.isLoading}}
-        >
-          取消
-        </button>
-        <button 
-          class="btn btn-primary" 
-          {{on "click" this.updateOrderStatus}}
-          disabled={{this.isLoading}}
-        >
-          {{if this.isLoading "更新中..." "确认更新"}}
-        </button>
+        
+        <div class="qd-modal-body">
+          {{#if this.selectedOrder}}
+            <div class="order-info">
+              <p><strong>订单号:</strong> #{{this.selectedOrder.id}}</p>
+              <p><strong>用户:</strong> {{this.selectedOrder.username}}</p>
+              <p><strong>商品:</strong> {{this.selectedOrder.item_name}}</p>
+              <p><strong>当前状态:</strong> {{this.getStatusText this.selectedOrder.status}}</p>
+            </div>
+            
+            <div class="status-form">
+              <label for="new-status">新状态:</label>
+              <select id="new-status" {{on "change" (action (mut this.newStatus) value="target.value")}}>
+                <option value="">请选择状态</option>
+                <option value="pending" selected={{eq this.newStatus "pending"}}>处理中</option>
+                <option value="completed" selected={{eq this.newStatus "completed"}}>已完成</option>
+                <option value="cancelled" selected={{eq this.newStatus "cancelled"}}>已取消</option>
+              </select>
+              
+              <label for="admin-notes">管理员备注:</label>
+              <textarea 
+                id="admin-notes" 
+                placeholder="可选的管理员备注..."
+                {{on "input" (action (mut this.adminNotes) value="target.value")}}
+              >{{this.adminNotes}}</textarea>
+            </div>
+            
+            {{#if this.statusMessage}}
+              <div class="status-message {{if (includes this.statusMessage '成功') 'success' 'error'}}">
+                {{this.statusMessage}}
+              </div>
+            {{/if}}
+          {{/if}}
+        </div>
+        
+        <div class="qd-modal-actions">
+          <button 
+            class="btn btn-primary" 
+            {{on "click" this.updateOrderStatus}}
+            disabled={{this.isLoading}}
+          >
+            {{#if this.isLoading}}
+              <i class="fa fa-spinner fa-spin"></i>
+              更新中...
+            {{else}}
+              确认更新
+            {{/if}}
+          </button>
+          <button class="btn btn-default" {{on "click" this.closeStatusModal}}>
+            取消
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-{{/if}}
+  {{/if}}
+</div>

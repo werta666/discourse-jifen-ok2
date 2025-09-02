@@ -32,33 +32,18 @@ export default class QdShopOrdersController extends Controller {
   }
 
   @action
-  async refreshOrders() {
+  refreshOrders() {
     this.isLoading = true;
-    this.statusMessage = "";
     
     try {
-      console.log("🔄 刷新用户订单列表");
+      console.log("🔄 刷新用户订单页面");
       
-      // 重新加载订单数据
-      const response = await ajax("/qd/shop/orders", {
-        type: "GET"
-      });
+      // 刷新当前路由
+      this.router.refresh();
       
-      if (response.status === "success") {
-        // 更新模型数据
-        this.model.orders = response.data || [];
-        
-        // 触发界面更新
-        this.notifyPropertyChange('model');
-        
-        console.log("✅ 用户订单列表刷新成功，共", this.model.orders.length, "条订单");
-      } else {
-        console.error("❌ 刷新失败:", response.message);
-        this.statusMessage = "刷新失败: " + (response.message || "未知错误");
-      }
+      console.log("✅ 页面刷新成功");
     } catch (error) {
-      console.error("❌ 刷新用户订单列表失败:", error);
-      this.statusMessage = "刷新失败: " + (error.message || "网络错误");
+      console.error("❌ 刷新页面失败:", error);
     } finally {
       this.isLoading = false;
     }

@@ -1,95 +1,58 @@
 import Controller from "@ember/controller";
 import { action } from "@ember/object";
 import { tracked } from "@glimmer/tracking";
-import { inject as service } from "@ember/service";
 import { ajax } from "discourse/lib/ajax";
 
 export default class QdShopAdminOrdersController extends Controller {
-  @service router;
   @tracked isLoading = false;
+  @tracked statusMessage = "";
   @tracked selectedOrder = null;
   @tracked showStatusModal = false;
   @tracked newStatus = "";
   @tracked adminNotes = "";
-  @tracked statusMessage = "";
   @tracked currentFilter = "all";
-  @tracked currentPage = 1;
-  @tracked pageSize = 8;
-  @tracked currentFilter = "all";
-  @tracked currentPage = 1;
-  @tracked pageSize = 8;
-
-  get totalOrders() {
-    return this.model?.pagination?.total_count || 0;
-  }
-
-  get pendingOrders() {
-    if (!this.model?.orders) return 0;
-    return this.model.orders.filter(order => order.status === "pending").length;
-  }
-
-  get completedOrders() {
-    if (!this.model?.orders) return 0;
-    return this.model.orders.filter(order => order.status === "completed").length;
-  }
-
-  get cancelledOrders() {
-    if (!this.model?.orders) return 0;
-    return this.model.orders.filter(order => order.status === "cancelled").length;
-  }
-
-  get allOrders() {
-    return this.model?.orders || [];
-  }
 
   get filteredOrders() {
-    if (this.currentFilter === "all") {
-      return this.allOrders;
+    if (!this.model?.orders) return [];
+    
+    const orders = this.model.orders;
+    
+    switch (this.currentFilter) {
+      case "pending":
+        return orders.filter(order => order.status === "pending");
+      case "completed":
+        return orders.filter(order => order.status === "completed");
+      case "cancelled":
+        return orders.filter(order => order.status === "cancelled");
+      default:
+        return orders;
     }
-    return this.allOrders.filter(order => order.status === this.currentFilter);
   }
 
-  get paginatedOrders() {
-    const startIndex = (this.currentPage - 1) * this.pageSize;
-    const endIndex = startIndex + this.pageSize;
-    return this.filteredOrders.slice(startIndex, endIndex);
-  }
-
-  get totalPages() {
-    return Math.ceil(this.filteredOrders.length / this.pageSize);
-  }
-
-  get hasMultiplePages() {
-    return this.totalPages > 1;
-  }
-
-  get hasPreviousPage() {
-    return this.currentPage > 1;
-  }
-
-  get hasNextPage() {
-    return this.currentPage < this.totalPages;
+  get orderStats() {
+    if (!this.model?.orders) return { total: 0, pending: 0, completed: 0, cancelled: 0 };
+    
+    const orders = this.model.orders;
+    return {
+      total: orders.length,
+      pending: orders.filter(order => order.status === "pending").length,
+      completed: orders.filter(order => order.status === "completed").length,
+      cancelled: orders.filter(order => order.status === "cancelled").length
+    };
   }
 
   @action
-  goBackToShop() {
-    this.router.transitionTo("qd-shop");
+  setFilter(filter) {
+    this.currentFilter = filter;
   }
 
   @action
-  refreshOrders() {
-    this.isLoading = true;
-    this.refresh().finally(() => {
-      this.isLoading = false;
-    });
-  }
-
-  @action
-  showUpdateStatusModal(order) {
+  openStatusModal(order) {
     this.selectedOrder = order;
     this.newStatus = order.status;
     this.adminNotes = "";
     this.showStatusModal = true;
+    this.statusMessage = "";
   }
 
   @action
@@ -102,62 +65,8 @@ export default class QdShopAdminOrdersController extends Controller {
   }
 
   @action
-  setFilter(filter) {
-    this.currentFilter = filter;
-    this.currentPage = 1; // 重置到第一页
-  }
-
-  @action
-  goToPage(page) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-    }
-  }
-
-  @action
-  previousPage() {
-    if (this.hasPreviousPage) {
-      this.currentPage--;
-    }
-  }
-
-  @action
-  nextPage() {
-    if (this.hasNextPage) {
-      this.currentPage++;
-    }
-  }
-
-  @action
-  async deleteOrder(order) {
-    if (!confirm(`确定要删除订单 #${order.id} 吗？此操作不可恢复。`)) {
-      return;
-    }
-
-    try {
-      const response = await ajax(`/qd/shop/admin/orders/${order.id}`, {
-        type: "DELETE"
-      });
-
-      if (response.status === "success") {
-        alert("✅ " + response.message);
-        // 从本地数据中移除订单
-        const orderIndex = this.model.orders.findIndex(o => o.id === order.id);
-        if (orderIndex !== -1) {
-          this.model.orders.splice(orderIndex, 1);
-        }
-      } else {
-        alert("❌ " + response.message);
-      }
-    } catch (error) {
-      console.error("删除订单失败:", error);
-      alert("❌ 删除订单失败：" + (error.message || "网络错误"));
-    }
-  }
-
-  @action
-  updateOrderStatus(event) {
-    this.newStatus = event.target.value;
+  updateOrderStatus(status) {
+    this.newStatus = status;
   }
 
   @action
@@ -225,8 +134,41 @@ export default class QdShopAdminOrdersController extends Controller {
   }
 
   @action
-  stopPropagation(event) {
-    event.stopPropagation();
+  async deleteOrder(order) {
+    if (!confirm(`确定要删除订单 #${order.id} 吗？`)) {
+      return;
+    }
+
+    this.isLoading = true;
+    this.statusMessage = "";
+
+    try {
+      const response = await ajax(`/qd/shop/admin/orders/${order.id}`, {
+        type: "DELETE"
+      });
+
+      if (response.status === "success") {
+        // 从列表中移除订单
+        const orderIndex = this.model.orders.findIndex(o => o.id === order.id);
+        if (orderIndex !== -1) {
+          this.model.orders.splice(orderIndex, 1);
+          this.notifyPropertyChange('model');
+        }
+        
+        this.statusMessage = "订单删除成功！";
+        
+        setTimeout(() => {
+          this.statusMessage = "";
+        }, 3000);
+      } else {
+        this.statusMessage = response.message || "删除失败";
+      }
+    } catch (error) {
+      console.error("删除订单失败:", error);
+      this.statusMessage = "删除失败：" + (error.message || "网络错误");
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   @action
@@ -237,31 +179,12 @@ export default class QdShopAdminOrdersController extends Controller {
     try {
       console.log("🔄 刷新管理员订单列表");
       
-      // 重新加载订单数据
-      const response = await ajax("/qd/shop/admin/orders", {
-        type: "GET",
-        data: {
-          page: this.currentPage || 1
-        }
-      });
+      // 重新加载当前路由
+      this.router.refresh();
       
-      if (response.status === "success") {
-        // 更新模型数据
-        this.model.orders = response.data.orders || [];
-        this.model.total_count = response.data.total_count || 0;
-        this.model.current_page = response.data.current_page || 1;
-        this.model.total_pages = response.data.total_pages || 1;
-        
-        // 触发界面更新
-        this.notifyPropertyChange('model');
-        
-        console.log("✅ 订单列表刷新成功，共", this.model.orders.length, "条订单");
-      } else {
-        console.error("❌ 刷新失败:", response.message);
-        this.statusMessage = "刷新失败: " + (response.message || "未知错误");
-      }
+      console.log("✅ 页面刷新成功");
     } catch (error) {
-      console.error("❌ 刷新订单列表失败:", error);
+      console.error("❌ 刷新页面失败:", error);
       this.statusMessage = "刷新失败: " + (error.message || "网络错误");
     } finally {
       this.isLoading = false;
@@ -269,21 +192,8 @@ export default class QdShopAdminOrdersController extends Controller {
   }
 
   @action
-  formatDate(dateString) {
-    if (!dateString) return "";
-    
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString("zh-CN", {
-        year: "numeric",
-        month: "2-digit", 
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    } catch (e) {
-      return dateString;
-    }
+  stopPropagation(event) {
+    event.stopPropagation();
   }
 
   @action
@@ -318,5 +228,23 @@ export default class QdShopAdminOrdersController extends Controller {
   getUserAvatar(avatarTemplate) {
     if (!avatarTemplate) return "/images/avatar.png";
     return avatarTemplate.replace("{size}", "45");
+  }
+
+  @action
+  formatDate(dateString) {
+    if (!dateString) return "";
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit", 
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } catch (e) {
+      return dateString;
+    }
   }
 }

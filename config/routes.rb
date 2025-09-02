@@ -44,4 +44,8 @@ MyPluginModule::Engine.routes.draw do
   post "/shop/create_sample" => "shop#create_sample"
   delete "/shop/products/:id" => "shop#delete_product"
   put "/shop/products/:id" => "shop#update_product"
+  
+  # 管理员订单管理路由
+  get "/shop/admin/orders" => "shop#admin_orders"
+  patch "/shop/admin/orders/:id/status" => "shop#update_order_status"
 end

@@ -17,6 +17,10 @@
       </LinkTo>
       
       {{#if model.isAdmin}}
+        <LinkTo @route="qd-shop-admin-orders" class="btn btn-secondary admin-orders-btn">
+          <i class="fa fa-list-alt"></i> 订单管理
+        </LinkTo>
+        
         <button class="btn btn-primary admin-btn" {{on "click" this.showAdminPanel}}>
           <i class="fa fa-cog"></i> 商店管理
         </button>

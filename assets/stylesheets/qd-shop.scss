@@ -1385,4 +1385,22 @@
       }
     }
   }
+
+// 管理员订单管理按钮样式
+.admin-orders-btn {
+  background: var(--highlight-medium, #ffc107) !important;
+  color: var(--secondary, #ffffff) !important;
+  text-decoration: none !important;
+  border: none !important;
+  
+  &:hover {
+    background: var(--highlight-high, #e0a800) !important;
+    color: var(--secondary, #ffffff) !important;
+    text-decoration: none !important;
+  }
+  
+  i {
+    margin-right: 6px;
+  }
+}
 }

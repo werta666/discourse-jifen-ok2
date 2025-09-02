@@ -107,70 +107,82 @@ class MyPluginModule::ShopController < ApplicationController
       current_points = MyPluginModule::JifenService.available_total_points(current_user)
       
       if ActiveRecord::Base.connection.table_exists?('qd_shop_products')
-        product = MyPluginModule::ShopProduct.find_by(id: product_id)
-        
-        unless product
-          render json: {
-            status: "error",
-            message: "商品不存在"
-          }, status: 404
-          return
-        end
-        
-        total_price = product.price * quantity
-        
-        if current_points < total_price
-          render json: {
-            status: "error",
-            message: "积分不足！当前积分：#{current_points}，需要：#{total_price}"
-          }, status: 422
-          return
-        end
-        
-        if product.stock < quantity
-          render json: {
-            status: "error",
-            message: "库存不足！剩余库存：#{product.stock}"
-          }, status: 422
-          return
-        end
-        
-        # 使用积分服务扣除积分（会自动记录审计日志）
-        MyPluginModule::JifenService.adjust_points!(
-          current_user, 
-          current_user, 
-          -total_price
-        )
-        new_points = MyPluginModule::JifenService.available_total_points(current_user)
-        
-        product.update!(stock: product.stock - quantity)
-        
-        # 创建订单记录
-        if ActiveRecord::Base.connection.table_exists?('qd_shop_orders')
-          MyPluginModule::ShopOrder.create!(
-            user_id: current_user.id,
-            product_id: product.id,
-            product_name: product.name,
-            quantity: quantity,
-            unit_price: product.price,
-            total_price: total_price,
-            status: "completed",
-            notes: notes
+        # 使用数据库事务和行锁防止并发问题
+        ActiveRecord::Base.transaction do
+          product = MyPluginModule::ShopProduct.lock.find_by(id: product_id)
+          
+          unless product
+            render json: {
+              status: "error",
+              message: "商品不存在"
+            }, status: 404
+            return
+          end
+          
+          total_price = product.price * quantity
+          
+          # 重新获取最新积分（防止并发修改）
+          current_points = MyPluginModule::JifenService.available_total_points(current_user)
+          
+          if current_points < total_price
+            render json: {
+              status: "error",
+              message: "积分不足！当前积分：#{current_points}，需要：#{total_price}"
+            }, status: 422
+            return
+          end
+          
+          if product.stock < quantity
+            render json: {
+              status: "error",
+              message: "库存不足！剩余库存：#{product.stock}"
+            }, status: 422
+            return
+          end
+          
+          # 使用积分服务扣除积分（会自动记录审计日志）
+          MyPluginModule::JifenService.adjust_points!(
+            current_user, 
+            current_user, 
+            -total_price
           )
-        end
+          new_points = MyPluginModule::JifenService.available_total_points(current_user)
+          
+          # 更新库存
+          product.update!(stock: product.stock - quantity)
         
-        Rails.logger.info "🛒 用户#{current_user.username} 购买商品: #{product.name} x#{quantity}, 花费#{total_price}积分"
-        
-        render json: {
-          status: "success",
-          message: "购买成功！",
-          data: {
-            product_name: product.name,
-            quantity: quantity,
-            total_price: total_price,
-            remaining_points: new_points
+          # 创建订单记录
+          order = nil
+          if ActiveRecord::Base.connection.table_exists?('qd_shop_orders')
+            order = MyPluginModule::ShopOrder.create!(
+              user_id: current_user.id,
+              product_id: product.id,
+              product_name: product.name,
+              product_description: product.description,
+              product_icon: product.icon_class,
+              quantity: quantity,
+              unit_price: product.price,
+              total_price: total_price,
+              status: "pending",
+              notes: notes
+            )
+          end
+          
+          Rails.logger.info "🛒 用户#{current_user.username} 购买商品: #{product.name} x#{quantity}, 花费#{total_price}积分, 订单号: #{order&.id}"
+          
+          render json: {
+            status: "success",
+            message: "购买成功！订单已提交，等待处理。",
+            data: {
+              order_id: order&.id,
+              product_name: product.name,
+              quantity: quantity,
+              total_price: total_price,
+              remaining_points: new_points,
+              order_status: "pending"
+            }
           }
-        }
+        end
       else
         # 模拟购买（仅扣除积分）
         mock_products = {
@@ -457,6 +469,133 @@ class MyPluginModule::ShopController < ApplicationController
     end
   end
   
+  # 管理员功能 - 订单管理
+  def admin_orders
+    ensure_logged_in
+    ensure_admin
+    
+    begin
+      page = params[:page]&.to_i || 1
+      per_page = 20
+      offset = (page - 1) * per_page
+      
+      if ActiveRecord::Base.connection.table_exists?('qd_shop_orders')
+        total_count = MyPluginModule::ShopOrder.count
+        orders = MyPluginModule::ShopOrder.includes(:user)
+                                         .order(created_at: :desc)
+                                         .limit(per_page)
+                                         .offset(offset)
+                                         .map do |order|
+          user = User.find_by(id: order.user_id)
+          {
+            id: order.id,
+            user_id: order.user_id,
+            username: user&.username || "未知用户",
+            user_avatar: user&.avatar_template || "",
+            product_id: order.product_id,
+            product_name: order.product_name,
+            product_description: order.product_description,
+            product_icon: order.product_icon,
+            quantity: order.quantity,
+            unit_price: order.unit_price,
+            total_price: order.total_price,
+            status: order.status,
+            created_at: order.created_at,
+            updated_at: order.updated_at,
+            notes: order.notes
+          }
+        end
+        
+        render json: {
+          status: "success",
+          data: {
+            orders: orders,
+            total_count: total_count,
+            current_page: page,
+            per_page: per_page,
+            total_pages: (total_count.to_f / per_page).ceil
+          }
+        }
+      else
+        render json: {
+          status: "error",
+          message: "订单表不存在"
+        }, status: 500
+      end
+    rescue => e
+      Rails.logger.error "获取管理员订单失败: #{e.message}"
+      render json: {
+        status: "error",
+        message: "获取订单失败: #{e.message}"
+      }, status: 500
+    end
+  end
+  
+  # 管理员功能 - 更新订单状态
+  def update_order_status
+    ensure_logged_in
+    ensure_admin
+    
+    begin
+      order_id = params[:id]&.to_i
+      new_status = params[:status]
+      admin_notes = params[:admin_notes] || ""
+      
+      unless ['pending', 'completed', 'cancelled'].include?(new_status)
+        render json: {
+          status: "error",
+          message: "无效的订单状态"
+        }, status: 422
+        return
+      end
+      
+      if ActiveRecord::Base.connection.table_exists?('qd_shop_orders')
+        order = MyPluginModule::ShopOrder.find_by(id: order_id)
+        
+        unless order
+          render json: {
+            status: "error",
+            message: "订单不存在"
+          }, status: 404
+          return
+        end
+        
+        old_status = order.status
+        order.update!(
+          status: new_status,
+          notes: admin_notes.present? ? "#{order.notes}
+[管理员备注] #{admin_notes}" : order.notes,
+          updated_at: Time.current
+        )
+        
+        user = User.find_by(id: order.user_id)
+        Rails.logger.info "🛒 管理员#{current_user.username} 将订单##{order.id} 状态从 #{old_status} 更新为 #{new_status}"
+        
+        render json: {
+          status: "success",
+          message: "订单状态更新成功",
+          data: {
+            id: order.id,
+            old_status: old_status,
+            new_status: new_status,
+            username: user&.username
+          }
+        }
+      else
+        render json: {
+          status: "error",
+          message: "订单表不存在"
+        }, status: 500
+      end
+    rescue => e
+      Rails.logger.error "更新订单状态失败: #{e.message}"
+      render json: {
+        status: "error",
+        message: "更新订单状态失败: #{e.message}"
+      }, status: 500
+    end
+  end
+
   # 管理员功能 - 更新商品
   def update_product
     ensure_logged_in

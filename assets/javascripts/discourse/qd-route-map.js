@@ -5,4 +5,5 @@ export default function () {
   this.route("qd-tp", { path: "/qd/tp" });
   this.route("qd-shop", { path: "/qd/shop" });
   this.route("qd-shop-orders", { path: "/qd/shop/orders" });
+  this.route("qd-shop-admin-orders", { path: "/qd/shop/admin/orders" });
 }

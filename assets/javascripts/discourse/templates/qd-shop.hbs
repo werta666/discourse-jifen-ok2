@@ -327,9 +327,7 @@
                       <span>预购</span>
                     </button>
                   </div>
-                  <div class="tags-hint">
-                    💡 选择标签后会自动在商品名称前添加对应前缀，默认为新品
-                  </div>
+
                 </div>
               </div>
               
@@ -454,6 +452,36 @@
                       {{on "input" (fn this.updateEditingProduct "name")}}
                       placeholder="请输入商品名称"
                     />
+                    
+                    <div class="product-tags-section">
+                      <label class="tags-label">商品标签</label>
+                      <div class="tags-buttons">
+                        <button 
+                          type="button"
+                          class="tag-btn tag-new {{if this.editingProduct.selectedTag.new 'active'}}"
+                          {{on "click" (fn this.selectProductTag "new" false)}}
+                        >
+                          <i class="fas fa-star"></i>
+                          <span>新品</span>
+                        </button>
+                        <button 
+                          type="button"
+                          class="tag-btn tag-hot {{if this.editingProduct.selectedTag.hot 'active'}}"
+                          {{on "click" (fn this.selectProductTag "hot" false)}}
+                        >
+                          <i class="fas fa-fire"></i>
+                          <span>热销</span>
+                        </button>
+                        <button 
+                          type="button"
+                          class="tag-btn tag-preorder {{if this.editingProduct.selectedTag.preorder 'active'}}"
+                          {{on "click" (fn this.selectProductTag "preorder" false)}}
+                        >
+                          <i class="fas fa-clock"></i>
+                          <span>预购</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   
                   <div class="form-group">

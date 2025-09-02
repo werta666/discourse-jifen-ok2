@@ -3,8 +3,9 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
-  background: var(--primary-very-low);
+  background: var(--primary-very-low, #f8f9fa);
   min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 // 页面头部
@@ -14,9 +15,10 @@
   align-items: center;
   margin-bottom: 30px;
   padding: 20px;
-  background: var(--secondary-very-low);
+  background: var(--secondary, #ffffff);
   border-radius: 12px;
-  border: 1px solid var(--primary-low);
+  border: 1px solid var(--primary-low, #e9ecef);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
   .qd-orders-title {
     display: flex;

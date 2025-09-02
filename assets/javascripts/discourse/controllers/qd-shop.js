@@ -15,6 +15,7 @@ export default class QdShopController extends Controller {
   @tracked isLoading = false;
   @tracked showSuccessPopup = false;
   @tracked successMessage = "";
+  @tracked currentFilter = "all";
   
   // 管理员添加商品表单
   @tracked newProduct = {
@@ -23,7 +24,12 @@ export default class QdShopController extends Controller {
     icon_class: "fa-gift",
     price: 100,
     stock: 50,
-    sort_order: 0
+    sort_order: 0,
+    tags: {
+      new: false,
+      hot: false,
+      preorder: false
+    }
   };
 
   // 管理员界面状态
@@ -175,6 +181,33 @@ export default class QdShopController extends Controller {
   get canAfford() {
     return this.model.userPoints >= this.totalPrice;
   }
+
+  get filteredProducts() {
+    if (!this.model.products) return [];
+    
+    if (this.currentFilter === "all") {
+      return this.model.products;
+    }
+    
+    return this.model.products.filter(product => {
+      const name = product.name.toLowerCase();
+      switch (this.currentFilter) {
+        case "新品":
+          return name.includes("新品");
+        case "热销":
+          return name.includes("热销");
+        case "预购":
+          return name.includes("预购");
+        default:
+          return true;
+      }
+    });
+  }
+
+  @action
+  setFilter(filter) {
+    this.currentFilter = filter;
+  }
   
   // 管理员功能
   @action
@@ -210,6 +243,9 @@ export default class QdShopController extends Controller {
     this.isLoading = true;
     
     try {
+      // 确保产品名称包含正确的标签前缀
+      this.updateProductNameWithTags(this.newProduct);
+      
       const result = await ajax("/qd/shop/add_product", {
         type: "POST",
         data: {
@@ -268,7 +304,12 @@ export default class QdShopController extends Controller {
       icon_class: "fa-gift",
       price: 100,
       stock: 50,
-      sort_order: 0
+      sort_order: 0,
+      tags: {
+        new: false,
+        hot: false,
+        preorder: false
+      }
     };
   }
 
@@ -293,8 +334,16 @@ export default class QdShopController extends Controller {
       icon_class: product.icon_class || "fa-gift",
       price: product.price || 0,
       stock: product.stock || 0,
-      sort_order: product.sort_order || 0
+      sort_order: product.sort_order || 0,
+      tags: {
+        new: false,
+        hot: false,
+        preorder: false
+      }
     };
+    
+    // 初始化标签状态
+    this.initializeProductTags(this.editingProduct);
     
     this.adminActiveTab = "edit";
     this.showAdminModal = true;
@@ -309,6 +358,9 @@ export default class QdShopController extends Controller {
     this.isLoading = true;
     
     try {
+      // 确保产品名称包含正确的标签前缀
+      this.updateProductNameWithTags(this.editingProduct);
+      
       const productData = {
         name: this.editingProduct.name,
         description: this.editingProduct.description,
@@ -409,5 +461,54 @@ export default class QdShopController extends Controller {
   hideSuccessMessage() {
     this.showSuccessPopup = false;
     this.successMessage = "";
+  }
+
+  // 商品标签管理功能
+  @action
+  toggleProductTag(tagType, isNewProduct = true) {
+    const product = isNewProduct ? this.newProduct : this.editingProduct;
+    if (!product.tags) {
+      product.tags = { new: false, hot: false, preorder: false };
+    }
+    
+    product.tags[tagType] = !product.tags[tagType];
+    
+    // 更新产品名称，添加或移除标签前缀
+    this.updateProductNameWithTags(product);
+  }
+
+  @action
+  updateProductNameWithTags(product) {
+    if (!product || !product.tags) return;
+    
+    // 移除现有的标签前缀
+    let baseName = product.name;
+    baseName = baseName.replace(/^\(新品\)-/, '');
+    baseName = baseName.replace(/^\(热销\)-/, '');
+    baseName = baseName.replace(/^\(预购\)-/, '');
+    
+    // 添加新的标签前缀
+    let prefix = '';
+    if (product.tags.new) prefix = '(新品)-';
+    else if (product.tags.hot) prefix = '(热销)-';
+    else if (product.tags.preorder) prefix = '(预购)-';
+    
+    product.name = prefix + baseName;
+  }
+
+  @action
+  initializeProductTags(product) {
+    // 从产品名称中解析现有标签
+    if (!product.tags) {
+      product.tags = { new: false, hot: false, preorder: false };
+    }
+    
+    if (product.name.includes('(新品)-')) {
+      product.tags.new = true;
+    } else if (product.name.includes('(热销)-')) {
+      product.tags.hot = true;
+    } else if (product.name.includes('(预购)-')) {
+      product.tags.preorder = true;
+    }
   }
 }

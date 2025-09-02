@@ -28,11 +28,39 @@
     </div>
   </div>
 
+  {{! 商品筛选功能 }}
+  <div class="qd-product-filters">
+    <button 
+      class="filter-btn {{if (eq this.currentFilter 'all') 'active'}}"
+      {{on "click" (fn this.setFilter "all")}}
+    >
+      全部商品
+    </button>
+    <button 
+      class="filter-btn {{if (eq this.currentFilter 'new') 'active'}}"
+      {{on "click" (fn this.setFilter "new")}}
+    >
+      <i class="fa fa-star"></i> 新品
+    </button>
+    <button 
+      class="filter-btn {{if (eq this.currentFilter 'hot') 'active'}}"
+      {{on "click" (fn this.setFilter "hot")}}
+    >
+      <i class="fa fa-fire"></i> 热销
+    </button>
+    <button 
+      class="filter-btn {{if (eq this.currentFilter 'preorder') 'active'}}"
+      {{on "click" (fn this.setFilter "preorder")}}
+    >
+      <i class="fa fa-clock-o"></i> 预购
+    </button>
+  </div>
+
   {{! 商品展示区域 }}
   <div class="qd-shop-content">
-    {{#if model.products.length}}
+    {{#if this.filteredProducts.length}}
       <div class="qd-products-grid">
-        {{#each model.products as |product|}}
+        {{#each this.filteredProducts as |product|}}
           <div class="qd-product-card">
             <div class="product-image">
               <div class="product-placeholder">
@@ -98,34 +126,20 @@
                   </div>
                 {{/if}}
               </div>
-              
-              {{#if product.sales_count}}
-                <div class="product-sales">
-                  <i class="fa fa-fire"></i>
-                  已售 {{product.sales_count}} 件
-                </div>
-              {{/if}}
             </div>
           </div>
         {{/each}}
       </div>
-      
-      {{! 分页信息 }}
-      {{#if (gt model.pagination.total_pages 1)}}
-        <div class="qd-shop-pagination">
-          <span class="pagination-info">
-            第 {{model.pagination.current_page}} 页，共 {{model.pagination.total_pages}} 页
-          </span>
-        </div>
-      {{/if}}
-      
     {{else}}
-      <div class="qd-shop-empty">
-        <div class="empty-icon">
+      <div class="qd-empty-products">
+        <div class="qd-empty-icon">
           <i class="fa fa-shopping-bag"></i>
         </div>
-        <h3>商店暂无商品</h3>
-        <p>管理员还没有上架任何商品，请稍后再来看看吧！</p>
+        <h3>{{#if (eq this.currentFilter "all")}}暂无商品{{else}}暂无{{this.getFilterText this.currentFilter}}商品{{/if}}</h3>
+        <p>{{#if (eq this.currentFilter "all")}}商店还没有上架商品{{else}}点击其他分类查看更多商品{{/if}}</p>
+        <button class="qd-refresh-btn" {{on "click" this.refreshProducts}}>
+          <i class="fa fa-refresh"></i> 刷新
+        </button>
       </div>
     {{/if}}
   </div>
@@ -133,7 +147,7 @@
   {{! 购买确认弹窗 }}
   {{#if this.showPurchaseModal}}
     <div class="qd-modal-backdrop" {{on "click" this.closePurchaseModal}}>
-      <div class="qd-modal-content" {{on "click" this.stopPropagation}} role="dialog">
+      <div class="qd-modal-content" {{on "click" this.stopPropagation}}>
         <div class="qd-modal-header">
           <h3>确认购买</h3>
           <button class="qd-close-btn" {{on "click" this.closePurchaseModal}}>
@@ -142,103 +156,98 @@
         </div>
         
         <div class="qd-modal-body">
-          {{#if this.selectedProduct}}
-            <div class="qd-product-summary">
-                <div class="product-thumb-placeholder">
-                  {{#if this.selectedProduct.icon_class}}
-                    <i class="fa {{this.selectedProduct.icon_class}}"></i>
-                  {{else}}
-                    <i class="fa fa-gift"></i>
-                  {{/if}}
-                </div>
-                
-                <div class="qd-product-details">
-                  <div class="qd-product-name">{{this.selectedProduct.name}}</div>
-                  <div class="qd-product-price">{{this.selectedProduct.price}} 积分</div>
-                </div>
-              </div>
-              
-              <div class="qd-quantity-section">
-                <label>购买数量</label>
-                <div class="qd-quantity-controls">
-                  <button 
-                    class="quantity-btn decrease-btn" 
-                    {{on "click" this.decreaseQuantity}} 
-                    disabled={{eq this.purchaseQuantity 1}}
-                  >
-                    <i class="fa fa-minus"></i>
-                  </button>
-                  <input 
-                    type="number" 
-                    class="quantity-input"
-                    min="1" 
-                    max="{{this.selectedProduct.stock}}"
-                    value="{{this.purchaseQuantity}}"
-                    {{on "input" this.updatePurchaseQuantity}}
-                    {{on "change" this.updatePurchaseQuantity}}
-                  />
-                  <button 
-                    class="quantity-btn increase-btn" 
-                    {{on "click" this.increaseQuantity}} 
-                    disabled={{gte this.purchaseQuantity this.selectedProduct.stock}}
-                  >
-                    <i class="fa fa-plus"></i>
-                  </button>
-                </div>
-              </div>
-              
-              <div class="qd-notes-section">
-                <label>备注信息[可选]</label>
-                <textarea 
-                  placeholder="如有要求需要填写邮箱或其他否则可能不发货哦~"
-                  value="{{this.purchaseRemark}}"
-                  {{on "input" this.updatePurchaseNotes}}
-                  rows="3"
-                ></textarea>
-              </div>
-                
-              <div class="qd-total-section">
-                <div class="qd-total-row">
-                  <span>单价：</span>
-                  <span>{{this.selectedProduct.price}} 积分</span>
-                </div>
-                <div class="qd-total-row">
-                  <span>数量：</span>
-                  <span>{{this.purchaseQuantity}} 件</span>
-                </div>
-                <div class="qd-total-row">
-                  <span>总计：</span>
-                  <span>{{this.totalPrice}} 积分</span>
-                </div>
-                <div class="qd-total-row">
-                  <span>我的积分：</span>
-                  <span>{{model.userPoints}} 积分</span>
-                </div>
-                {{#unless this.canAfford}}
-                  <div class="qd-insufficient-warning">积分不足</div>
-                {{/unless}}
+          <div class="qd-product-summary">
+            <div class="product-thumb-placeholder">
+              {{#if this.selectedProduct.icon_class}}
+                <i class="fa {{this.selectedProduct.icon_class}}"></i>
+              {{else}}
+                <i class="fa fa-gift"></i>
+              {{/if}}
             </div>
-          {{/if}}
-        </div>
-        
-        <div class="qd-modal-actions">
-          <button class="qd-cancel-btn" {{on "click" this.closePurchaseModal}}>
-            <i class="fa fa-times"></i>
-            取消
-          </button>
-          <button 
-            class="qd-confirm-btn {{if this.isLoading 'loading'}}" 
-            {{on "click" this.confirmPurchase}}
-            disabled={{or this.isLoading (not this.canAfford)}}
-          >
-            {{#if this.isLoading}}
-              <i class="fa fa-spinner fa-spin"></i>
-              处理中...
-            {{else}}
-              <i class="fa fa-shopping-cart"></i>
-              确认购买
-            {{/if}}
-          </button>
+            <div class="qd-product-details">
+              <div class="qd-product-name">{{this.selectedProduct.name}}</div>
+              <div class="qd-product-price">{{this.selectedProduct.price}} 积分</div>
+            </div>
+          </div>
+          
+          <div class="qd-quantity-section">
+            <label>购买数量</label>
+            <div class="qd-quantity-controls">
+              <button 
+                class="quantity-btn" 
+                {{on "click" this.decreaseQuantity}}
+                disabled={{eq this.purchaseQuantity 1}}
+              >
+                <i class="fa fa-minus"></i>
+              </button>
+              <input 
+                type="number" 
+                class="quantity-input"
+                min="1"
+                max="{{this.selectedProduct.stock}}"
+                value="{{this.purchaseQuantity}}"
+                {{on "input" this.updatePurchaseQuantity}}
+              />
+              <button 
+                class="quantity-btn" 
+                {{on "click" this.increaseQuantity}}
+                disabled={{gte this.purchaseQuantity this.selectedProduct.stock}}
+              >
+                <i class="fa fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="qd-notes-section">
+            <label>备注信息</label>
+            <textarea 
+              placeholder="如有要求需要填写邮箱或其他否则可能不发货哦~"
+              value="{{this.purchaseRemark}}"
+              {{on "input" this.updatePurchaseNotes}}
+            ></textarea>
+            <div class="note-hint">请填写收货信息或特殊要求</div>
+          </div>
+          
+          <div class="qd-total-section">
+            <div class="qd-total-row">
+              <span>单价：</span>
+              <span>{{this.selectedProduct.price}} 积分</span>
+            </div>
+            <div class="qd-total-row">
+              <span>数量：</span>
+              <span>{{this.purchaseQuantity}} 件</span>
+            </div>
+            <div class="qd-total-row">
+              <span>总计：</span>
+              <span>{{this.totalPrice}} 积分</span>
+            </div>
+            
+            {{#unless this.canAfford}}
+              <div class="qd-insufficient-warning">
+                积分不足！还需要 {{sub this.totalPrice model.userPoints}} 积分
+              </div>
+            {{/unless}}
+          </div>
+          
+          <div class="qd-modal-actions">
+            <button class="qd-cancel-btn" {{on "click" this.closePurchaseModal}}>
+              <i class="fa fa-times"></i>
+              取消
+            </button>
+            <button 
+              class="qd-confirm-btn {{if this.isLoading 'loading'}}" 
+              {{on "click" this.confirmPurchase}}
+              disabled={{or this.isLoading (not this.canAfford)}}
+            >
+              {{#if this.isLoading}}
+                <i class="fa fa-spinner fa-spin"></i>
+                处理中...
+              {{else}}
+                <i class="fa fa-shopping-cart"></i>
+                确认购买
+              {{/if}}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -257,7 +266,6 @@
         
         <div class="qd-modal-body">
           <div class="admin-section">
-            <!-- 标签页导航 -->
             <div class="admin-tabs">
               <button 
                 class="admin-tab {{if (eq this.adminActiveTab 'add') 'active'}}"
@@ -281,243 +289,243 @@
               {{/if}}
             </div>
 
-            <!-- 添加商品标签页 -->
             {{#if (eq this.adminActiveTab "add")}}
-              <div class="admin-content">
-                <h4>添加新商品</h4>
+              <div class="form-group">
+                <label>商品名称</label>
+                <input 
+                  type="text" 
+                  value={{this.newProduct.name}}
+                  {{on "input" (fn this.updateNewProduct "name")}}
+                  placeholder="请输入商品名称"
+                />
+                
+                <div class="product-tags">
+                  <label class="tag-checkbox">
+                    <input 
+                      type="checkbox" 
+                      checked={{this.newProduct.isNew}}
+                      {{on "change" (fn this.updateProductTag "isNew")}}
+                    />
+                    <span>新品</span>
+                  </label>
+                  <label class="tag-checkbox">
+                    <input 
+                      type="checkbox" 
+                      checked={{this.newProduct.isHot}}
+                      {{on "change" (fn this.updateProductTag "isHot")}}
+                    />
+                    <span>热销</span>
+                  </label>
+                  <label class="tag-checkbox">
+                    <input 
+                      type="checkbox" 
+                      checked={{this.newProduct.isPreorder}}
+                      {{on "change" (fn this.updateProductTag "isPreorder")}}
+                    />
+                    <span>预购</span>
+                  </label>
+                </div>
+              </div>
               
+              <div class="form-group">
+                <label>商品描述</label>
+                <textarea 
+                  value={{this.newProduct.description}}
+                  {{on "input" (fn this.updateNewProduct "description")}}
+                  placeholder="请输入商品描述"
+                ></textarea>
+              </div>
+              
+              <div class="form-row">
                 <div class="form-group">
-                  <label>商品名称</label>
+                  <label>图标类名</label>
                   <input 
                     type="text" 
-                    value={{this.newProduct.name}}
-                    {{on "input" (fn this.updateNewProduct "name")}}
-                    placeholder="请输入商品名称"
+                    value={{this.newProduct.icon_class}}
+                    {{on "input" (fn this.updateNewProduct "icon_class")}}
+                    placeholder="fa-gift"
                   />
                 </div>
-                
                 <div class="form-group">
-                  <label>商品描述</label>
-                  <textarea 
-                    value={{this.newProduct.description}}
-                    {{on "input" (fn this.updateNewProduct "description")}}
-                    placeholder="请输入商品描述"
-                  ></textarea>
+                  <label>价格 (积分)</label>
+                  <input 
+                    type="number" 
+                    value={{this.newProduct.price}}
+                    {{on "input" (fn this.updateNewProduct "price")}}
+                    placeholder="100"
+                  />
                 </div>
-                
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>图标类名</label>
-                    <input 
-                      type="text" 
-                      value={{this.newProduct.icon_class}}
-                      {{on "input" (fn this.updateNewProduct "icon_class")}}
-                      placeholder="fa-gift"
-                    />
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>价格（积分）</label>
-                    <input 
-                      type="number" 
-                      value={{this.newProduct.price}}
-                      {{on "input" (fn this.updateNewProduct "price")}}
-                      min="1"
-                    />
-                  </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label>库存数量</label>
+                  <input 
+                    type="number" 
+                    value={{this.newProduct.stock}}
+                    {{on "input" (fn this.updateNewProduct "stock")}}
+                    placeholder="50"
+                  />
                 </div>
-                
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>库存数量</label>
-                    <input 
-                      type="number" 
-                      value={{this.newProduct.stock}}
-                      {{on "input" (fn this.updateNewProduct "stock")}}
-                      min="0"
-                    />
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>排序</label>
-                    <input 
-                      type="number" 
-                      value={{this.newProduct.sort_order}}
-                      {{on "input" (fn this.updateNewProduct "sort_order")}}
-                      min="0"
-                    />
-                  </div>
+                <div class="form-group">
+                  <label>排序</label>
+                  <input 
+                    type="number" 
+                    value={{this.newProduct.sort_order}}
+                    {{on "input" (fn this.updateNewProduct "sort_order")}}
+                    placeholder="0"
+                  />
                 </div>
-                
-                <div class="admin-actions">
-                  <button 
-                    class="qd-confirm-btn" 
-                    {{on "click" this.addProduct}}
-                    disabled={{this.isLoading}}
-                  >
-                    {{#if this.isLoading}}
-                      添加中...
-                    {{else}}
-                      ✅ 添加商品
-                    {{/if}}
-                  </button>
-                  
-                  <button 
-                    class="qd-cancel-btn" 
-                    {{on "click" this.createSampleData}}
-                    disabled={{this.isLoading}}
-                  >
-                    🎯 创建示例数据
-                  </button>
-                </div>
+              </div>
+              
+              <div class="admin-actions">
+                <button class="qd-cancel-btn" {{on "click" this.resetNewProduct}}>
+                  <i class="fa fa-refresh"></i> 重置
+                </button>
+                <button 
+                  class="qd-confirm-btn" 
+                  {{on "click" this.addProduct}}
+                  disabled={{this.isLoading}}
+                >
+                  {{#if this.isLoading}}
+                    <i class="fa fa-spinner fa-spin"></i> 添加中...
+                  {{else}}
+                    <i class="fa fa-plus"></i> 添加商品
+                  {{/if}}
+                </button>
               </div>
             {{/if}}
 
-            <!-- 管理商品标签页 -->
             {{#if (eq this.adminActiveTab "manage")}}
-              <div class="admin-content">
-                <h4>商品列表</h4>
-                {{#if model.products.length}}
-                  <div class="products-manage-list">
-                    {{#each model.products as |product|}}
-                      <div class="product-manage-item">
-                        <div class="product-info">
-                          <strong>{{product.name}}</strong>
-                          <span class="product-price">{{product.price}}积分</span>
-                          <span class="product-stock">库存: {{product.stock}}</span>
-                        </div>
-                        <div class="product-actions">
-                          <button 
-                            class="edit-btn" 
-                            {{on "click" (fn this.editProduct product)}}
-                          >
-                            编辑
-                          </button>
-                          <button 
-                            class="delete-btn" 
-                            {{on "click" (fn this.deleteProduct product)}}
-                          >
-                            删除
-                          </button>
+              <h4>商品列表</h4>
+              {{#if model.products.length}}
+                <div class="products-manage-list">
+                  {{#each model.products as |product|}}
+                    <div class="product-manage-item">
+                      <div class="product-info">
+                        <div class="product-name">{{product.name}}</div>
+                        <div class="product-details">
+                          价格: {{product.price}} 积分 | 库存: {{product.stock}} | 图标: {{product.icon_class}}
                         </div>
                       </div>
-                    {{/each}}
-                  </div>
-                {{else}}
+                      <div class="product-actions">
+                        <button 
+                          class="edit-btn" 
+                          {{on "click" (fn this.editProduct product)}}
+                        >
+                          <i class="fa fa-edit"></i> 编辑
+                        </button>
+                        <button 
+                          class="delete-btn" 
+                          {{on "click" (fn this.deleteProduct product)}}
+                        >
+                          <i class="fa fa-trash"></i> 删除
+                        </button>
+                      </div>
+                    </div>
+                  {{/each}}
+                </div>
+              {{else}}
+                <div class="no-products">
                   <p>暂无商品</p>
-                {{/if}}
-              </div>
+                  <button class="qd-confirm-btn" {{on "click" this.createSampleData}}>
+                    <i class="fa fa-magic"></i> 创建示例数据
+                  </button>
+                </div>
+              {{/if}}
             {{/if}}
 
-            <!-- 编辑商品标签页 -->
-            {{#if (and this.editingProduct (eq this.adminActiveTab "edit"))}}
-              <div class="edit-product-section">
-                <h4>编辑商品</h4>
-                
-                <div class="form-group">
-                  <label>商品名称</label>
-                  <input 
-                    type="text" 
-                    value={{this.editingProduct.name}}
-                    {{on "input" (fn this.updateEditingProduct "name")}}
-                    placeholder="请输入商品名称"
-                  />
-                </div>
-                
-                <div class="form-group">
-                  <label>商品描述</label>
-                  <textarea 
-                    value={{this.editingProduct.description}}
-                    {{on "input" (fn this.updateEditingProduct "description")}}
-                    placeholder="请输入商品描述"
-                  ></textarea>
-                </div>
-                
-                <div class="form-row">
+            {{#if (eq this.adminActiveTab "edit")}}
+              {{#if this.editingProduct}}
+                <div class="edit-product-section">
+                  <h4>编辑商品</h4>
+                  
                   <div class="form-group">
-                    <label>图标类名</label>
+                    <label>商品名称</label>
                     <input 
                       type="text" 
-                      value={{this.editingProduct.icon_class}}
-                      {{on "input" (fn this.updateEditingProduct "icon_class")}}
-                      placeholder="fa-gift"
+                      value={{this.editingProduct.name}}
+                      {{on "input" (fn this.updateEditingProduct "name")}}
+                      placeholder="请输入商品名称"
                     />
                   </div>
                   
                   <div class="form-group">
-                    <label>价格（积分）</label>
-                    <input 
-                      type="number" 
-                      value={{this.editingProduct.price}}
-                      {{on "input" (fn this.updateEditingProduct "price")}}
-                      min="1"
-                    />
-                  </div>
-                </div>
-                
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>库存数量</label>
-                    <input 
-                      type="number" 
-                      value={{this.editingProduct.stock}}
-                      {{on "input" (fn this.updateEditingProduct "stock")}}
-                      min="0"
-                    />
+                    <label>商品描述</label>
+                    <textarea 
+                      value={{this.editingProduct.description}}
+                      {{on "input" (fn this.updateEditingProduct "description")}}
+                      placeholder="请输入商品描述"
+                    ></textarea>
                   </div>
                   
-                  <div class="form-group">
-                    <label>排序</label>
-                    <input 
-                      type="number" 
-                      value={{this.editingProduct.sort_order}}
-                      {{on "input" (fn this.updateEditingProduct "sort_order")}}
-                      min="0"
-                    />
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>图标类名</label>
+                      <input 
+                        type="text" 
+                        value={{this.editingProduct.icon_class}}
+                        {{on "input" (fn this.updateEditingProduct "icon_class")}}
+                        placeholder="fa-gift"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>价格 (积分)</label>
+                      <input 
+                        type="number" 
+                        value={{this.editingProduct.price}}
+                        {{on "input" (fn this.updateEditingProduct "price")}}
+                        placeholder="100"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>库存数量</label>
+                      <input 
+                        type="number" 
+                        value={{this.editingProduct.stock}}
+                        {{on "input" (fn this.updateEditingProduct "stock")}}
+                        placeholder="50"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>排序</label>
+                      <input 
+                        type="number" 
+                        value={{this.editingProduct.sort_order}}
+                        {{on "input" (fn this.updateEditingProduct "sort_order")}}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="admin-actions">
+                    <button class="qd-cancel-btn" {{on "click" (fn this.setAdminTab "manage")}}>
+                      <i class="fa fa-arrow-left"></i> 返回
+                    </button>
+                    <button 
+                      class="qd-confirm-btn" 
+                      {{on "click" this.updateProduct}}
+                      disabled={{this.isLoading}}
+                    >
+                      {{#if this.isLoading}}
+                        <i class="fa fa-spinner fa-spin"></i> 更新中...
+                      {{else}}
+                        <i class="fa fa-save"></i> 保存更改
+                      {{/if}}
+                    </button>
                   </div>
                 </div>
-                
-                <div class="admin-actions">
-                  <button 
-                    class="qd-confirm-btn" 
-                    {{on "click" this.updateProduct}}
-                    disabled={{this.isLoading}}
-                  >
-                    {{#if this.isLoading}}
-                      更新中...
-                    {{else}}
-                      ✅ 更新商品
-                    {{/if}}
-                  </button>
-                  
-                  <button 
-                    class="qd-cancel-btn" 
-                    {{on "click" (fn this.setAdminTab "manage")}}
-                  >
-                    取消编辑
-                  </button>
+              {{else}}
+                <div class="no-editing-product">
+                  <p>请先选择要编辑的商品</p>
                 </div>
-              </div>
+              {{/if}}
             {{/if}}
           </div>
         </div>
-      </div>
-    </div>
-  {{/if}}
-
-  {{! 绿色主题成功弹框 }}
-  {{#if this.showSuccessPopup}}
-    <div class="qd-success-popup-backdrop" {{on "click" this.hideSuccessMessage}}>
-      <div class="qd-success-popup">
-        <div class="qd-success-icon">
-          <i class="fa fa-check-circle"></i>
-        </div>
-        <div class="qd-success-message">
-          {{this.successMessage}}
-        </div>
-        <button class="qd-success-close" {{on "click" this.hideSuccessMessage}}>
-          <i class="fa fa-times"></i>
-        </button>
       </div>
     </div>
   {{/if}}

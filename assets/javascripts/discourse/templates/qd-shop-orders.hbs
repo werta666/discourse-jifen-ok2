@@ -1,0 +1,145 @@
+<div class="qd-shop-orders">
+  {{! 头部区域 - 简洁橱窗风格 }}
+  <div class="orders-header">
+    <div class="header-content">
+      <h2>
+        <i class="fa fa-history"></i>
+        购买历史
+      </h2>
+      <LinkTo @route="qd-shop" class="back-btn">
+        <i class="fa fa-arrow-left"></i>
+        返回商店
+      </LinkTo>
+    </div>
+    
+    <div class="orders-stats">
+      <div class="stat-card">
+        <div class="stat-value">{{this.model.orders.length}}</div>
+        <div class="stat-label">订单总数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{this.model.totalSpent}}</div>
+        <div class="stat-label">消费积分</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="orders-content">
+    {{#if this.model.orders.length}}
+      <div class="orders-list">
+        {{#each this.formattedOrders as |order|}}
+          <div class="order-card" {{on "click" (fn this.showOrderDetail order)}}>
+            <div class="order-header">
+              <div class="order-id">#{{order.id}}</div>
+              <div class="order-status status-{{order.status}}">
+                {{order.statusText}}
+              </div>
+            </div>
+            
+            <div class="order-info">
+              <div class="order-product">
+                <div class="product-icon">
+                  <i class="{{order.product_icon}}"></i>
+                </div>
+                <div class="product-details">
+                  <div class="product-name">{{order.product_name}}</div>
+                  <div class="product-meta">
+                    {{order.quantity}}件 × {{order.unit_price}}积分
+                  </div>
+                </div>
+              </div>
+              
+              <div class="order-meta">
+                <div class="order-date">{{order.formattedDate}}</div>
+                <div class="order-total">{{order.total_price}}积分</div>
+              </div>
+            </div>
+            
+            {{#if order.notes}}
+              <div class="order-notes">
+                <i class="fa fa-comment"></i>
+                {{order.notes}}
+              </div>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="empty-orders">
+        <div class="empty-icon">
+          <i class="fa fa-shopping-cart"></i>
+        </div>
+        <h3>暂无购买记录</h3>
+        <p>还没有购买过任何商品哦</p>
+        <LinkTo @route="qd-shop" class="btn">
+          <i class="fa fa-shopping-bag"></i>
+          去购物
+        </LinkTo>
+      </div>
+    {{/if}}
+  </div>
+
+  {{! 订单详情模态框 }}
+  {{#if this.selectedOrder}}
+    <div class="order-detail-modal" {{on "click" this.closeOrderDetail}}>
+      <div class="modal-content" {{on "click" (fn (mut false))}}>
+        <div class="modal-header">
+          <h3>订单 #{{this.selectedOrder.id}}</h3>
+          <button class="close-btn" {{on "click" this.closeOrderDetail}}>
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="detail-section">
+            <h4>商品信息</h4>
+            <div class="product-detail">
+              <div class="product-icon">
+                <i class="{{this.selectedOrder.product_icon}}"></i>
+              </div>
+              <div>
+                <div class="product-name">{{this.selectedOrder.product_name}}</div>
+                <div class="product-desc">{{this.selectedOrder.product_description}}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h4>订单详情</h4>
+            <div class="order-details">
+              <div class="detail-row">
+                <span>状态</span>
+                <span class="status-{{this.selectedOrder.status}}">
+                  {{this.selectedOrder.statusText}}
+                </span>
+              </div>
+              <div class="detail-row">
+                <span>数量</span>
+                <span>{{this.selectedOrder.quantity}}件</span>
+              </div>
+              <div class="detail-row">
+                <span>单价</span>
+                <span>{{this.selectedOrder.unit_price}}积分</span>
+              </div>
+              <div class="detail-row">
+                <span>时间</span>
+                <span>{{this.selectedOrder.formattedDate}}</span>
+              </div>
+              <div class="detail-row">
+                <span>总计</span>
+                <span class="total-price">{{this.selectedOrder.total_price}}积分</span>
+              </div>
+            </div>
+          </div>
+          
+          {{#if this.selectedOrder.notes}}
+            <div class="detail-section">
+              <h4>备注</h4>
+              <div class="order-notes">{{this.selectedOrder.notes}}</div>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  {{/if}}
+</div>

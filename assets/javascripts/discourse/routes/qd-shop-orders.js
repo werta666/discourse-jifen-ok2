@@ -1,18 +1,27 @@
-import Route from "@ember/routing/route";
+import DiscourseRoute from "discourse/routes/discourse";
 import { ajax } from "discourse/lib/ajax";
 
-export default class QdShopOrdersRoute extends Route {
-  model() {
-    return ajax("/qd/shop/orders").then(response => {
+export default class QdShopOrdersRoute extends DiscourseRoute {
+  async model() {
+    try {
+      const response = await ajax("/qd/shop/orders");
+      
+      // 后端返回格式: { status: "success", data: [...] }
       return {
-        orders: response.data.orders || [],
-        totalSpent: response.data.totalSpent || 0
+        orders: response.data || [],
+        total_count: response.data ? response.data.length : 0,
+        status: response.status,
+        message: response.message || ""
       };
-    }).catch(() => {
+    } catch (error) {
+      console.error("获取订单历史失败:", error);
+      
       return {
         orders: [],
-        totalSpent: 0
+        total_count: 0,
+        status: "error",
+        message: "获取订单历史失败"
       };
-    });
+    }
   }
 }

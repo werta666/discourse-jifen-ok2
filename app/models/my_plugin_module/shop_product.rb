@@ -34,7 +34,7 @@ module MyPluginModule
     end
 
     def icon_class_or_default
-      icon_class.present? ? icon_class : 'fa-gift'
+      icon_class.present? ? icon_class : 'fas fa-gift'
     end
 
     def stock_status

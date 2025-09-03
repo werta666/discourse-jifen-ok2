@@ -101,15 +101,15 @@ export default class QdShopOrdersController extends Controller {
     
     const name = productName.toLowerCase();
     if (name.includes("vip") || name.includes("会员")) {
-      return "fa-crown";
+      return "fa-solid fa-dragon";
     } else if (name.includes("头像") || name.includes("框")) {
-      return "fa-user-circle";
+      return "fa-regular fa-gem";
     } else if (name.includes("宝箱") || name.includes("礼盒")) {
-      return "fa-treasure-chest";
+      return "fa-solid fa-gifts";
     } else if (name.includes("加速") || name.includes("boost")) {
-      return "fa-rocket";
+      return "fa-solid fa-bolt";
     } else if (name.includes("补签") || name.includes("卡")) {
-      return "fa-calendar-plus";
+      return "fa-solid fa-clock-rotate-left";
     } else {
       return "fa fa-gift";
     }

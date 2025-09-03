@@ -366,7 +366,7 @@ class MyPluginModule::ShopController < ApplicationController
           {
             name: "VIP会员",
             description: "享受30天VIP特权，无广告浏览",
-            icon_class: "fa-crown",
+            icon_class: "fa-solid fa-dragon",
             price: 500,
             stock: 999,
             sort_order: 1
@@ -374,7 +374,7 @@ class MyPluginModule::ShopController < ApplicationController
           {
             name: "专属头像框",
             description: "炫酷的金色头像框，彰显身份",
-            icon_class: "fa-user-circle",
+            icon_class: "fa-regular fa-gem",
             price: 200,
             stock: 50,
             sort_order: 2
@@ -382,7 +382,7 @@ class MyPluginModule::ShopController < ApplicationController
           {
             name: "积分宝箱",
             description: "随机获得50-200积分奖励",
-            icon_class: "fa-treasure-chest",
+            icon_class: "fa-solid fa-gifts",
             price: 80,
             stock: 100,
             sort_order: 3

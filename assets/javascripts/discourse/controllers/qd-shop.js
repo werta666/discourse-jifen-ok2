@@ -478,23 +478,21 @@ export default class QdShopController extends Controller {
   @action
   showSuccessMessage(message) {
     console.log("🎉 显示成功消息:", message);
+    
+    // 使用简单的弹框方式
     this.successMessage = message;
     this.showSuccessPopup = true;
-    console.log("🎉 showSuccessPopup 设置为:", this.showSuccessPopup);
     
     // 3秒后自动隐藏
     setTimeout(() => {
-      console.log("🎉 3秒后自动隐藏成功消息");
       this.hideSuccessMessage();
     }, 3000);
   }
 
   @action
   hideSuccessMessage() {
-    console.log("❌ 隐藏成功消息");
     this.showSuccessPopup = false;
     this.successMessage = "";
-    console.log("❌ showSuccessPopup 设置为:", this.showSuccessPopup);
   }
 
   // 商品标签管理功能

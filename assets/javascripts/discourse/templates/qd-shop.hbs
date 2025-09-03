@@ -24,10 +24,6 @@
         <button class="btn btn-primary admin-btn" {{on "click" this.showAdminPanel}}>
           <i class="fa fa-cog"></i> 商店管理
         </button>
-        
-        <button class="btn btn-success" {{on "click" (fn this.showSuccessMessage "测试成功弹窗！")}}>
-          <i class="fa fa-check"></i> 测试成功弹窗
-        </button>
       {{/if}}
     </div>
   </div>
@@ -570,30 +566,18 @@
 
 </div>
 
-{{! 绿色主题成功弹框 - 使用内联样式确保显示 }}
+{{! 简单成功弹框 }}
 {{#if this.showSuccessPopup}}
-  <div 
-    class="qd-success-popup-backdrop" 
-    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999;"
-    {{on "click" this.hideSuccessMessage}}
-  >
-    <div 
-      class="qd-success-popup"
-      style="background: #10b981; border-radius: 12px; padding: 30px 40px; max-width: 350px; width: 90%; text-align: center; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 10000;"
-    >
-      <div class="qd-success-icon" style="margin-bottom: 15px;">
-        <i class="fa fa-check-circle" style="font-size: 48px; color: white;"></i>
-      </div>
-      <div class="qd-success-message" style="font-size: 20px; font-weight: 600; color: white; margin-bottom: 15px;">
-        {{this.successMessage}}
-      </div>
-      <button 
-        class="qd-success-close" 
-        style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
-        {{on "click" this.hideSuccessMessage}}
-      >
-        <i class="fa fa-times" style="font-size: 12px; color: white;"></i>
-      </button>
+  <div id="success-popup" style="position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; background: white !important; border: 2px solid #10b981 !important; border-radius: 8px !important; padding: 20px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; z-index: 99999 !important; min-width: 300px !important; text-align: center !important;">
+    <div style="color: #10b981 !important; font-size: 18px !important; font-weight: bold !important; margin-bottom: 10px !important;">
+      ✅ {{this.successMessage}}
     </div>
+    <button 
+      style="background: #10b981 !important; color: white !important; border: none !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important;"
+      {{on "click" this.hideSuccessMessage}}
+    >
+      确定
+    </button>
   </div>
+  <div style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5) !important; z-index: 99998 !important;" {{on "click" this.hideSuccessMessage}}></div>
 {{/if}}

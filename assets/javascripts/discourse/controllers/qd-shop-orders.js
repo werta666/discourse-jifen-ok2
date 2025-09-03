@@ -97,7 +97,7 @@ export default class QdShopOrdersController extends Controller {
 
   @action
   getProductIcon(productName) {
-    if (!productName) return "fa-gift";
+    if (!productName) return "fa fa-gift";
     
     const name = productName.toLowerCase();
     if (name.includes("vip") || name.includes("会员")) {
@@ -111,7 +111,7 @@ export default class QdShopOrdersController extends Controller {
     } else if (name.includes("补签") || name.includes("卡")) {
       return "fa-calendar-plus";
     } else {
-      return "fa-gift";
+      return "fa fa-gift";
     }
   }
 }

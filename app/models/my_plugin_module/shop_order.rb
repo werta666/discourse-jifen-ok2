@@ -44,7 +44,7 @@ module MyPluginModule
     end
 
     def product_icon
-      product&.icon_class || "fa-gift"
+      product&.icon_class || "fa fa-gift"
     end
   end
 end

@@ -566,18 +566,67 @@
 
 </div>
 
-{{! 简单成功弹框 }}
+{{! 美化成功弹框 - 与商店风格一致 }}
 {{#if this.showSuccessPopup}}
-  <div id="success-popup" style="position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; background: white !important; border: 2px solid #10b981 !important; border-radius: 8px !important; padding: 20px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; z-index: 99999 !important; min-width: 300px !important; text-align: center !important;">
-    <div style="color: #10b981 !important; font-size: 18px !important; font-weight: bold !important; margin-bottom: 10px !important;">
-      ✅ {{this.successMessage}}
+  <div id="success-popup" style="position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important; border: 2px solid #10b981 !important; border-radius: 16px !important; padding: 32px 40px !important; box-shadow: 0 20px 60px rgba(16, 185, 129, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1) !important; z-index: 99999 !important; min-width: 380px !important; text-align: center !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;">
+    
+    {{! 礼花装饰 }}
+    <div style="position: absolute !important; top: -10px !important; left: 20px !important; font-size: 24px !important; animation: bounce 2s infinite !important;">🎉</div>
+    <div style="position: absolute !important; top: -5px !important; right: 25px !important; font-size: 20px !important; animation: bounce 2s infinite 0.3s !important;">✨</div>
+    <div style="position: absolute !important; top: 15px !important; left: 15px !important; font-size: 16px !important; animation: bounce 2s infinite 0.6s !important;">🎊</div>
+    <div style="position: absolute !important; top: 20px !important; right: 15px !important; font-size: 18px !important; animation: bounce 2s infinite 0.9s !important;">🌟</div>
+    
+    {{! 成功图标 }}
+    <div style="margin-bottom: 20px !important;">
+      <div style="display: inline-block !important; width: 80px !important; height: 80px !important; background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3) !important; animation: successPulse 2s infinite !important;">
+        <i class="fas fa-check" style="font-size: 36px !important; color: white !important;"></i>
+      </div>
     </div>
+    
+    {{! 成功消息 }}
+    <div style="color: #111827 !important; font-size: 24px !important; font-weight: 700 !important; margin-bottom: 8px !important; letter-spacing: -0.025em !important;">
+      购买成功！
+    </div>
+    <div style="color: #6b7280 !important; font-size: 16px !important; margin-bottom: 24px !important; line-height: 1.5 !important;">
+      {{this.successMessage}}
+    </div>
+    
+    {{! 确定按钮 }}
     <button 
-      style="background: #10b981 !important; color: white !important; border: none !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important;"
+      style="background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; color: white !important; border: none !important; padding: 12px 32px !important; border-radius: 8px !important; cursor: pointer !important; font-size: 16px !important; font-weight: 600 !important; transition: all 0.2s ease !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important; display: inline-flex !important; align-items: center !important; gap: 8px !important;"
       {{on "click" this.hideSuccessMessage}}
+      onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.4)'"
+      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'"
     >
-      确定
+      <i class="fas fa-thumbs-up"></i>
+      太棒了
+    </button>
+    
+    {{! 关闭按钮 }}
+    <button 
+      style="position: absolute !important; top: 12px !important; right: 12px !important; background: rgba(107, 114, 128, 0.1) !important; border: none !important; border-radius: 50% !important; width: 32px !important; height: 32px !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.2s ease !important;"
+      {{on "click" this.hideSuccessMessage}}
+      onmouseover="this.style.background='rgba(107, 114, 128, 0.2)'; this.style.transform='scale(1.1)'"
+      onmouseout="this.style.background='rgba(107, 114, 128, 0.1)'; this.style.transform='scale(1)'"
+    >
+      <i class="fas fa-times" style="font-size: 14px !important; color: #6b7280 !important;"></i>
     </button>
   </div>
-  <div style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5) !important; z-index: 99998 !important;" {{on "click" this.hideSuccessMessage}}></div>
+  
+  {{! 背景遮罩 }}
+  <div style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0, 0, 0, 0.4) !important; z-index: 99998 !important; backdrop-filter: blur(4px) !important;" {{on "click" this.hideSuccessMessage}}></div>
+  
+  {{! CSS动画定义 }}
+  <style>
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
+    }
+    @keyframes successPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
 {{/if}}

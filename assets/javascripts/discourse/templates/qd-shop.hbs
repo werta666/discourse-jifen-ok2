@@ -570,18 +570,29 @@
 
 </div>
 
-{{! 绿色主题成功弹框 - 移到页面最外层 }}
+{{! 绿色主题成功弹框 - 使用内联样式确保显示 }}
 {{#if this.showSuccessPopup}}
-  <div class="qd-success-popup-backdrop" {{on "click" this.hideSuccessMessage}}>
-    <div class="qd-success-popup">
-      <div class="qd-success-icon">
-        <i class="fa fa-check-circle"></i>
+  <div 
+    class="qd-success-popup-backdrop" 
+    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999;"
+    {{on "click" this.hideSuccessMessage}}
+  >
+    <div 
+      class="qd-success-popup"
+      style="background: #10b981; border-radius: 12px; padding: 30px 40px; max-width: 350px; width: 90%; text-align: center; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 10000;"
+    >
+      <div class="qd-success-icon" style="margin-bottom: 15px;">
+        <i class="fa fa-check-circle" style="font-size: 48px; color: white;"></i>
       </div>
-      <div class="qd-success-message">
+      <div class="qd-success-message" style="font-size: 20px; font-weight: 600; color: white; margin-bottom: 15px;">
         {{this.successMessage}}
       </div>
-      <button class="qd-success-close" {{on "click" this.hideSuccessMessage}}>
-        <i class="fa fa-times"></i>
+      <button 
+        class="qd-success-close" 
+        style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+        {{on "click" this.hideSuccessMessage}}
+      >
+        <i class="fa fa-times" style="font-size: 12px; color: white;"></i>
       </button>
     </div>
   </div>

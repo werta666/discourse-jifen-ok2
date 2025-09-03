@@ -24,6 +24,10 @@
         <button class="btn btn-primary admin-btn" {{on "click" this.showAdminPanel}}>
           <i class="fa fa-cog"></i> 商店管理
         </button>
+        
+        <button class="btn btn-success" {{on "click" (fn this.showSuccessMessage "测试成功弹窗！")}}>
+          <i class="fa fa-check"></i> 测试成功弹窗
+        </button>
       {{/if}}
     </div>
   </div>

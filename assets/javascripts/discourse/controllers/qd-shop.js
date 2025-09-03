@@ -21,7 +21,7 @@ export default class QdShopController extends Controller {
   @tracked newProduct = {
     name: "",
     description: "",
-    icon_class: "fas fa-gift",
+    icon_class: "fa-gift",
     price: 100,
     stock: 50,
     sort_order: 0,
@@ -351,7 +351,7 @@ export default class QdShopController extends Controller {
       id: product.id,
       name: cleanName,
       description: product.description || "",
-      icon_class: product.icon_class || "fas fa-gift",
+      icon_class: product.icon_class || "fa-gift",
       price: product.price || 0,
       stock: product.stock || 0,
       sort_order: product.sort_order || 0,
